@@ -46,7 +46,7 @@ data MyriadConfig = MyriadConfig
     , buildConcurrently :: Bool
     , prepareContainers :: Bool
     , cleanupInterval :: Natural
-    , port :: Integer
+    , port :: Natural
     } deriving (Show, Generic)
 
 instance Interpret MyriadConfig

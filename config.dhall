@@ -23,7 +23,7 @@ let Config : Type =
     , buildConcurrently : Bool                -- Whether to build images concurrently
     , prepareContainers : Bool                -- Whether to setup all containers on startup
     , cleanupInterval   : Natural             -- The interval in minutes to kill containers periodically
-    , port              : Integer             -- Port to run on
+    , port              : Natural             -- Port to run on
     }
 
 -- Write your config here!
