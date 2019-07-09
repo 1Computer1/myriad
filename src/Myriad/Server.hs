@@ -45,8 +45,7 @@ serverT = handleLanguages :<|> handleEval
         handleEval :: EvalRequest -> MyriadT m EvalResponse
         handleEval EvalRequest { language, code } = do
             logInfoN $ mconcat ["POST /eval"]
-            env <- ask
-            let MyriadConfig { languages } = config env
+            MyriadConfig { languages } <- asks config
             case find (\x -> name x == language) languages of
                 Nothing  -> throwError $ err404 { errBody = "Language " <> cvs language <> " was not found" }
                 Just cfg -> do
