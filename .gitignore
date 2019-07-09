@@ -1,0 +1,4 @@
+.stack-work/
+.vscode/
+logs/
+myriad.cabal
