@@ -9,7 +9,7 @@ Arbitrary code execution server using Docker.
 
 ## Endpoints
 
-`GET /languages`  
+### **GET** `/languages`
 List of enabled languages.  
 Example response:  
 
@@ -17,9 +17,7 @@ Example response:
 ["haskell", "javascript"]
 ```
 
----
-
-`POST /eval`  
+### **POST** `/eval`
 Evaluate code.  
 JSON payload with `language` and `code` keys.  
 The `language` is as in the name of a subfolder in the `language` directory.  
