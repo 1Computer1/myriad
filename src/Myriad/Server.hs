@@ -61,8 +61,11 @@ serverT = handleLanguages :<|> handleEval :<|> handleContainers :<|> handleClean
 
         handleContainers :: MyriadT m [T.Text]
         handleContainers = do
+            logInfoN $ mconcat ["GET /containers"]
             containers <- asks containers >>= readIORef
             pure . map cvs $ M.elems containers
 
         handleCleanup :: MyriadT m [T.Text]
-        handleCleanup = map cvs <$> killAllContainersMaybe
+        handleCleanup = do
+            logInfoN $ mconcat ["POST /cleanup"]
+            map cvs <$> killAllContainersMaybe
