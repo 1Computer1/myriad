@@ -20,7 +20,7 @@ Example response:
 ### **POST** `/eval`
 Evaluate code.  
 JSON payload with `language` and `code` keys.  
-The `language` is as in the name of a subfolder in the `language` directory.  
+The `language` is as in the name of a subfolder in the `languages` directory.  
 Example payload:  
 
 ```json
