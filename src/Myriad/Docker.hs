@@ -125,11 +125,11 @@ killAllContainers = do
     containers <- asks containers >>= readIORef
     forConcurrently_ (M.keys containers) $ killContainer
 
-killAllContainersMaybe :: MonadWithIO m => MyriadT m Int
+killAllContainersMaybe :: MonadWithIO m => MyriadT m [ContainerName]
 killAllContainersMaybe = do
     containers <- asks containers >>= readIORef
-    xs <- forConcurrently (M.keys containers) $ killContainerMaybe
-    pure . length $ filter id xs
+    xs <- forConcurrently (M.toList containers) \(k, v) -> (v,) <$> killContainerMaybe k
+    pure . map fst $ filter snd xs
 
 evalCode :: MonadWithIO m => LanguageConfig -> Int -> String -> MyriadT m EvalResult
 evalCode lang@LanguageConfig { name, timeout, retries } numRetries code = do

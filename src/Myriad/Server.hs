@@ -10,10 +10,12 @@ import Control.Monad.Reader
 
 import Data.Aeson
 import Data.List (find)
+import qualified Data.Map as M
 import qualified Data.Text as T
 import GHC.Generics
 
 import Control.Concurrent.Async.Lifted
+import Data.IORef.Lifted
 import Servant
 
 import Myriad.Core
@@ -26,6 +28,8 @@ data EvalResponse = EvalResponse { result :: T.Text } deriving (Generic, ToJSON)
 type API
     =    "languages" :> Get '[JSON] [T.Text]
     :<|> "eval" :> ReqBody '[JSON] EvalRequest :> Post '[JSON] EvalResponse
+    :<|> "containers" :> Get '[JSON] [T.Text]
+    :<|> "cleanup" :> Post '[JSON] [T.Text]
 
 app :: Env -> Application
 app = serve (Proxy @API) . server
@@ -34,7 +38,7 @@ server :: Env -> Server API
 server env = hoistServer (Proxy @API) (runMyriadT env) serverT
 
 serverT :: forall m. (MonadWithIO m, MonadError ServantErr m) => ServerT API (MyriadT m)
-serverT = handleLanguages :<|> handleEval
+serverT = handleLanguages :<|> handleEval :<|> handleContainers :<|> handleCleanup
     where
         handleLanguages :: MyriadT m [T.Text]
         handleLanguages = do
@@ -54,3 +58,11 @@ serverT = handleLanguages :<|> handleEval
                         EvalErrored  -> throwError $ err500 { errBody = "Evaluation failed" }
                         EvalTimedOut -> throwError $ err504 { errBody = "Evaluation timed out" }
                         EvalOk xs    -> pure . EvalResponse $ cvs xs
+
+        handleContainers :: MyriadT m [T.Text]
+        handleContainers = do
+            containers <- asks containers >>= readIORef
+            pure . map cvs $ M.elems containers
+
+        handleCleanup :: MyriadT m [T.Text]
+        handleCleanup = map cvs <$> killAllContainersMaybe
