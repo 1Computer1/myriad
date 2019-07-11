@@ -2,10 +2,15 @@
 
 Arbitrary code execution server using Docker.  
 
-## Setup
+## Install
 
-- Fill out `config.dhall`, read it for documentation and an example
-- Run `stack run`
+- Install [Stack 2+](https://docs.haskellstack.org/en/stable/README/)
+- Run `stack install`, a `myriad` executable will be installed
+
+## Running
+
+- Make sure the configuration is filled out, see `config.dhall` for an example
+- Run `myriad --config path/to/config.dhall`
 
 ## Endpoints
 

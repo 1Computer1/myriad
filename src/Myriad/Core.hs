@@ -67,12 +67,12 @@ type MyriadT m = ReaderT Env (LoggingT m)
 type MonadWithIO m = (MonadIO m, MonadBase IO m, MonadBaseControl IO m)
 
 readConfig :: T.Text -> IO MyriadConfig
-readConfig path = input auto path
+readConfig = input auto
 
 initEnv :: T.Text -> IO Env
-initEnv path =
+initEnv configInput =
         Env
-    <$> readConfig path
+    <$> readConfig configInput
     <*> newIORef M.empty
     <*> newIORef M.empty
     <*> newIORef M.empty

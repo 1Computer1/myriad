@@ -25,6 +25,7 @@ dependencies:
 - monad-control
 - monad-logger
 - mtl
+- optparse-applicative
 - servant
 - servant-server
 - snowflake
