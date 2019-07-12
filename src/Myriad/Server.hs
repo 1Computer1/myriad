@@ -15,7 +15,7 @@ import qualified Data.Text as T
 import GHC.Generics
 
 import Control.Concurrent.Async.Lifted
-import Data.IORef.Lifted
+import Control.Concurrent.MVar.Lifted
 import Servant
 
 import Myriad.Core
@@ -62,7 +62,7 @@ serverT = handleLanguages :<|> handleEval :<|> handleContainers :<|> handleClean
         handleContainers :: MyriadT m [T.Text]
         handleContainers = do
             logInfoN $ mconcat ["GET /containers"]
-            containers <- asks containers >>= readIORef
+            containers <- asks containers >>= readMVar
             pure . map cvs $ M.elems containers
 
         handleCleanup :: MyriadT m [T.Text]

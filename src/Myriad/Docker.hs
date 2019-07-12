@@ -16,21 +16,21 @@ import Control.Monad.Reader
 
 import qualified Data.Map.Strict as M
 
-import Control.Concurrent.Lifted (fork, threadDelay)
 import Control.Concurrent.Async.Lifted
+import Control.Concurrent.Lifted (fork, threadDelay)
+import Control.Concurrent.MVar.Lifted
 import Control.Concurrent.QSem.Lifted
 import Control.Exception.Lifted
-import Data.IORef.Lifted
 import Data.Snowflake
 import System.Process.Typed
 
 import Myriad.Core
 import Myriad.Util
 
-exec :: MonadWithIO m => String -> MyriadT m ()
+exec :: String -> MyriadIO ()
 exec = runProcess_ . shell
 
-buildImage :: MonadWithIO m => LanguageConfig -> MyriadT m ()
+buildImage :: LanguageConfig -> MyriadIO ()
 buildImage lang@LanguageConfig { name, concurrent } = do
     logInfoN $ mconcat ["Building image ", cvs $ imageName lang]
     let cmd = mconcat ["docker build -t ", imageName lang, " ./languages/", cvs name]
@@ -39,35 +39,35 @@ buildImage lang@LanguageConfig { name, concurrent } = do
     Env { config = MyriadConfig { prepareContainers }, containerSems, evalSems } <- ask
     csem <- newQSem 1 -- We only want one container to be set up at a time
     esem <- newQSem $ fromIntegral concurrent
-    modifyIORef' containerSems $ M.insert name csem
-    modifyIORef' evalSems $ M.insert name esem
+    modifyMVar_ containerSems $ pure . M.insert name csem
+    modifyMVar_ evalSems $ pure . M.insert name esem
     when_ prepareContainers $ setupContainer lang
 
-buildAllImages :: MonadWithIO m => MyriadT m ()
+buildAllImages :: MyriadIO ()
 buildAllImages = do
     MyriadConfig { languages, buildConcurrently } <- asks config
     if buildConcurrently
         then forConcurrently_ languages buildImage
         else forM_ languages buildImage
 
-startCleanup :: MonadWithIO m => MyriadT m ()
+startCleanup :: MyriadIO ()
 startCleanup = do
     MyriadConfig { cleanupInterval } <- asks config
     when_ (cleanupInterval > 0) do
         let t = fromIntegral cleanupInterval * 60000000
         fork $ timer t
     where
-        timer :: MonadWithIO m => Int -> MyriadT m ()
+        timer :: Int -> MyriadIO ()
         timer t = forever do
             threadDelay t
             n <- killAllContainersMaybe
             logInfoN $ mconcat ["Cleaned up ", cvs $ show n, " containers"]
             timer t
 
-setupContainer :: MonadWithIO m => LanguageConfig -> MyriadT m ContainerName
+setupContainer :: LanguageConfig -> MyriadIO ContainerName
 setupContainer lang@LanguageConfig { name, memory, cpus } = do
     ref <- asks containers
-    cnts <- readIORef ref
+    cnts <- readMVar ref
     case cnts M.!? name of
         Just x  -> pure x
         Nothing -> do
@@ -91,60 +91,60 @@ setupContainer lang@LanguageConfig { name, memory, cpus } = do
             -- 711 so that users can't traverse into other people's code
             exec $ mconcat ["docker exec ", cnt, " mkdir eval"]
             exec $ mconcat ["docker exec ", cnt, " chmod 711 eval"]
-            modifyIORef' ref $ M.insert name cnt
+            modifyMVar_ ref $ pure . M.insert name cnt
             logInfoN $ mconcat ["Started container ", cvs cnt]
             pure cnt
 
-killContainer :: MonadWithIO m => Language -> MyriadT m ()
+killContainer :: Language -> MyriadIO ()
 killContainer lang = do
     ref <- asks containers
-    containers <- readIORef ref
+    containers <- readMVar ref
     case containers M.!? lang of
         Nothing  -> pure ()
         Just cnt -> do
-            modifyIORef' ref $ M.delete lang
+            modifyMVar_ ref $ pure . M.delete lang
             let cmd = mconcat ["docker kill ", cnt]
             runProcess_ . setStderr nullStream . setStdout nullStream $ shell cmd
             logInfoN $ mconcat ["Killed container ", cvs cnt]
 
-killContainerMaybe :: MonadWithIO m => Language -> MyriadT m Bool
+killContainerMaybe :: Language -> MyriadIO Bool
 killContainerMaybe lang = do
-    containers <- asks containers >>= readIORef
+    containers <- asks containers >>= readMVar
     case containers M.!? lang of
         Nothing  -> pure False
         Just cnt -> do
-            res :: Either SomeException () <- try $ killContainer lang
+            res <- try @_ @SomeException $ killContainer lang
             case res of
                 Left err -> do
                     logErrorN $ mconcat ["An exception occured when killing ", cvs cnt, ":\n", cvs $ show err]
                     pure False
                 Right _  -> pure True
 
-killAllContainers :: MonadWithIO m => MyriadT m ()
+killAllContainers :: MyriadIO ()
 killAllContainers = do
-    containers <- asks containers >>= readIORef
+    containers <- asks containers >>= readMVar
     forConcurrently_ (M.keys containers) $ killContainer
 
-killAllContainersMaybe :: MonadWithIO m => MyriadT m [ContainerName]
+killAllContainersMaybe :: MyriadIO [ContainerName]
 killAllContainersMaybe = do
-    containers <- asks containers >>= readIORef
+    containers <- asks containers >>= readMVar
     xs <- forConcurrently (M.toList containers) \(k, v) -> (v,) <$> killContainerMaybe k
     pure . map fst $ filter snd xs
 
-evalCode :: MonadWithIO m => LanguageConfig -> Int -> String -> MyriadT m EvalResult
+evalCode :: LanguageConfig -> Int -> String -> MyriadIO EvalResult
 evalCode lang@LanguageConfig { name, timeout, retries } numRetries code = do
     Env { containerSems, evalSems } <- ask
-    csem <- (M.! name) <$> readIORef containerSems
-    esem <- (M.! name) <$> readIORef evalSems
+    csem <- (M.! name) <$> readMVar containerSems
+    esem <- (M.! name) <$> readMVar evalSems
     bracket_ (waitQSem esem) (signalQSem esem) $ do
         cnt <- bracket_ (waitQSem csem) (signalQSem csem) $ setupContainer lang
-        doneRef <- newIORef False -- For keeping track of if the evaluation is done, i.e. succeeded or timed out.
+        doneRef <- newMVar False -- For keeping track of if the evaluation is done, i.e. succeeded or timed out.
         void . fork $ timer doneRef -- `race` could not have been used here since some evals can't be cancelled.
         res <- try $ eval cnt
         case res of
             Left (SomeException err) -> do
                 void $ killContainerMaybe name
-                done <- readIORef doneRef
+                done <- readMVar doneRef
                 if done
                     -- If we find the eval is done from an exception, then it was timed out.
                     then do
@@ -152,25 +152,25 @@ evalCode lang@LanguageConfig { name, timeout, retries } numRetries code = do
                         pure EvalTimedOut
                     -- Otherwise, the container was killed from another eval, so we should retry.
                     else do
-                        writeIORef doneRef True
+                        modifyMVar_ doneRef $ pure . const True
                         if numRetries < fromIntegral retries
                             then evalCode lang (numRetries + 1) code
                             else do
                                 logErrorN $ mconcat ["An exception occured when evaluating in ", cvs cnt, ":\n", cvs $ show err]
                                 pure EvalErrored
             Right x -> do
-                writeIORef doneRef True
+                modifyMVar_ doneRef $ pure . const True
                 pure x
     where
-        timer :: MonadWithIO m => IORef Bool -> MyriadT m ()
+        timer :: MVar Bool -> MyriadIO ()
         timer doneRef = do
             threadDelay $ fromIntegral timeout * 1000000
-            done <- readIORef doneRef
+            done <- readMVar doneRef
             unless_ done do
-                writeIORef doneRef True
+                modifyMVar_ doneRef $ pure . const True
                 killContainerMaybe name
 
-        eval :: MonadWithIO m => ContainerName -> MyriadT m EvalResult
+        eval :: ContainerName -> MyriadIO EvalResult
         eval cnt = do
             logInfoN $ mconcat ["Running code in container ", cvs cnt, ":\n", cvs code]
             snowflakeGen <- asks snowflakeGen

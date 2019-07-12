@@ -8,6 +8,7 @@ module Myriad.Core
     , LanguageConfig(..)
     , MyriadT
     , MonadWithIO
+    , MyriadIO
     , runMyriadT
     , initEnv
     ) where
@@ -23,8 +24,8 @@ import qualified Data.Text as T
 import Dhall
 import GHC.Generics (Generic)
 
+import Control.Concurrent.MVar
 import Control.Concurrent.QSem
-import Data.IORef.Lifted
 import Data.Snowflake
 
 type Language = T.Text
@@ -35,9 +36,9 @@ data EvalResult = EvalOk BL.ByteString | EvalTimedOut | EvalErrored
 
 data Env = Env
     { config :: MyriadConfig
-    , containers :: IORef (M.Map Language ContainerName)
-    , containerSems :: IORef (M.Map Language QSem)
-    , evalSems :: IORef (M.Map Language QSem)
+    , containers :: MVar (M.Map Language ContainerName)
+    , containerSems :: MVar (M.Map Language QSem)
+    , evalSems :: MVar (M.Map Language QSem)
     , snowflakeGen :: SnowflakeGen
     }
 
@@ -66,6 +67,8 @@ type MyriadT m = ReaderT Env (LoggingT m)
 
 type MonadWithIO m = (MonadIO m, MonadBase IO m, MonadBaseControl IO m)
 
+type MyriadIO a = forall m. MonadWithIO m => MyriadT m a
+
 readConfig :: T.Text -> IO MyriadConfig
 readConfig = input auto
 
@@ -73,9 +76,9 @@ initEnv :: T.Text -> IO Env
 initEnv configInput =
         Env
     <$> readConfig configInput
-    <*> newIORef M.empty
-    <*> newIORef M.empty
-    <*> newIORef M.empty
+    <*> newMVar M.empty
+    <*> newMVar M.empty
+    <*> newMVar M.empty
     <*> newSnowflakeGen defaultConfig 0
 
 runMyriadT :: MonadIO m => Env -> MyriadT m a -> m a
