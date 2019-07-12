@@ -5,7 +5,6 @@ module Myriad.Server
     ) where
 
 import Control.Monad.Except
-import Control.Monad.Logger
 import Control.Monad.Reader
 
 import Data.Aeson
@@ -42,13 +41,13 @@ serverT = handleLanguages :<|> handleEval :<|> handleContainers :<|> handleClean
     where
         handleLanguages :: MyriadT m [T.Text]
         handleLanguages = do
-            logInfoN $ mconcat ["GET /languages"]
+            logInfo ["GET /languages"]
             MyriadConfig { languages } <- asks config
             pure . map name $ languages
 
         handleEval :: EvalRequest -> MyriadT m EvalResponse
         handleEval EvalRequest { language, code } = do
-            logInfoN $ mconcat ["POST /eval"]
+            logInfo ["POST /eval"]
             MyriadConfig { languages } <- asks config
             case find (\x -> name x == language) languages of
                 Nothing  -> throwError $ err404 { errBody = "Language " <> cvs language <> " was not found" }
@@ -61,11 +60,11 @@ serverT = handleLanguages :<|> handleEval :<|> handleContainers :<|> handleClean
 
         handleContainers :: MyriadT m [T.Text]
         handleContainers = do
-            logInfoN $ mconcat ["GET /containers"]
+            logInfo ["GET /containers"]
             containers <- asks containers >>= readMVar
             pure . map cvs $ M.elems containers
 
         handleCleanup :: MyriadT m [T.Text]
         handleCleanup = do
-            logInfoN $ mconcat ["POST /cleanup"]
-            map cvs <$> killAllContainersMaybe
+            logInfo ["POST /cleanup"]
+            map cvs <$> killContainers
