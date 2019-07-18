@@ -1,3 +1,5 @@
+{-# LANGUAGE UndecidableInstances #-}
+
 module Myriad.Core
     ( Language
     , ContainerName
@@ -7,26 +9,37 @@ module Myriad.Core
     , MyriadConfig(..)
     , LanguageConfig(..)
     , MyriadT
-    , MonadWithIO
-    , MyriadIO
+    , Myriad
+    , Myriadic
     , runMyriadT
     , initEnv
+    , exec
+    , exec_
+    , logInfo
+    , logError
+    , mapMVar
+    , writeMVar
     ) where
 
 import Control.Monad.Base
-import Control.Monad.Logger
+import Control.Monad.Except
+import Control.Monad.Logger hiding (logError, logInfo)
 import Control.Monad.Reader
+import Control.Monad.State
 import Control.Monad.Trans.Control
+import Control.Monad.Writer
 
 import qualified Data.ByteString.Lazy as BL
+import Data.Functor.Identity
 import qualified Data.Map.Strict as M
+import Data.Snowflake
 import qualified Data.Text as T
 import Dhall
 import GHC.Generics (Generic)
 
-import Control.Concurrent.MVar
-import Control.Concurrent.QSem
-import Data.Snowflake
+import Control.Concurrent.MVar.Lifted
+import Control.Concurrent.QSem.Lifted
+import System.Process.Typed
 
 type Language = T.Text
 type ContainerName = String
@@ -63,11 +76,37 @@ data LanguageConfig = LanguageConfig
 
 instance Interpret LanguageConfig
 
-type MyriadT m = ReaderT Env (LoggingT m)
+newtype MyriadT m a = MyriadT { unMyriadT :: ReaderT Env (LoggingT m) a }
+    deriving newtype
+        ( Functor
+        , Applicative
+        , Monad
+        , MonadReader Env
+        , MonadLogger
+        , MonadLoggerIO
+        , MonadIO
+        , MonadError e
+        , MonadState s
+        , MonadWriter w
+        , MonadBase b
+        )
 
-type MonadWithIO m = (MonadIO m, MonadBase IO m, MonadBaseControl IO m)
+instance MonadTrans MyriadT where
+    lift = MyriadT . lift . lift 
 
-type MyriadIO a = forall m. MonadWithIO m => MyriadT m a
+instance MonadTransControl MyriadT where
+    type StT MyriadT a = a
+    liftWith = defaultLiftWith2 MyriadT unMyriadT
+    restoreT = defaultRestoreT2 MyriadT
+
+instance MonadBaseControl b m => MonadBaseControl b (MyriadT m) where
+    type StM (MyriadT m) a = ComposeSt MyriadT m a
+    liftBaseWith = defaultLiftBaseWith
+    restoreM = defaultRestoreM
+
+type Myriad = MyriadT Identity
+
+type Myriadic m = (MonadReader Env m, MonadLogger m, MonadLoggerIO m, MonadIO m, MonadBase IO m, MonadBaseControl IO m)
 
 readConfig :: T.Text -> IO MyriadConfig
 readConfig = input auto
@@ -82,4 +121,22 @@ initEnv configInput =
     <*> newSnowflakeGen defaultConfig 0
 
 runMyriadT :: MonadIO m => Env -> MyriadT m a -> m a
-runMyriadT env f = runStdoutLoggingT $ runReaderT f env
+runMyriadT env = runStdoutLoggingT . flip runReaderT env . unMyriadT
+
+exec :: MonadIO m => [String] -> m BL.ByteString
+exec = readProcessInterleaved_ . shell . mconcat
+
+exec_ :: MonadIO m => [String] -> m ()
+exec_ = void . exec
+
+logInfo :: MonadLogger m => [T.Text] -> m ()
+logInfo = logInfoN . mconcat
+
+logError :: MonadLogger m => [T.Text] -> m ()
+logError = logErrorN . mconcat
+
+mapMVar :: (MonadBase IO m, MonadBaseControl IO m) => MVar a -> (a -> a) -> m ()
+mapMVar var f = modifyMVar_ var (pure . f)
+
+writeMVar :: (MonadBase IO m, MonadBaseControl IO m) => MVar a -> a -> m ()
+writeMVar var x = mapMVar var $ const x

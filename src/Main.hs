@@ -1,7 +1,5 @@
 module Main where
 
-import Control.Monad.Logger
-
 import qualified Data.Text as T
 import Options.Applicative
 
@@ -32,7 +30,6 @@ main = do
     runMyriadT env do
         buildAllImages
         startCleanup
-    runStdoutLoggingT do
-        logInfoN "Finished Docker-related setup"
-        logInfoN "Starting server"
+        logInfo ["Finished Docker-related setup"]
+        logInfo ["Starting server"]
     run (fromIntegral . port . config $ env) $ app env
