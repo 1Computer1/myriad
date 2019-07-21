@@ -1,1 +1,2 @@
-printf %s "$1" | julia
+printf %s "$1" > program.jl
+julia program.jl || true
