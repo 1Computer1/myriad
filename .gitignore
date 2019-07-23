@@ -2,3 +2,5 @@
 .vscode/
 logs/
 myriad.cabal
+config.dhall
+myriad
