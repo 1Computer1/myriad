@@ -61,6 +61,7 @@ data MyriadConfig = MyriadConfig
     , prepareContainers :: Bool
     , cleanupInterval :: Natural
     , port :: Natural
+    , languagesDir :: T.Text
     } deriving (Show, Generic)
 
 instance Interpret MyriadConfig

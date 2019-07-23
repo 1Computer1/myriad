@@ -20,12 +20,12 @@ dependencies:
 - bytestring
 - containers
 - dhall
+- filepath
 - lifted-base
 - lifted-async
 - monad-control
 - monad-logger
 - mtl
-- optparse-applicative
 - servant
 - servant-server
 - snowflake
@@ -66,11 +66,17 @@ default-extensions:
 - TypeFamilies
 - ViewPatterns
 
+library:
+  source-dirs: src
+
 executable:
   main: Main.hs
-  source-dirs: src
+  source-dirs: app
   ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
     - -Wall
+  dependencies:
+    - myriad
+    - optparse-applicative

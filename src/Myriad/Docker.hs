@@ -20,17 +20,18 @@ import Control.Concurrent.Lifted (fork, threadDelay)
 import Control.Concurrent.MVar.Lifted
 import Control.Concurrent.QSem.Lifted
 import Control.Exception.Lifted
+import System.FilePath ((</>))
 import System.Process.Typed
 
 import Myriad.Core
 
 buildImage :: Myriadic m => LanguageConfig -> m ()
 buildImage lang@LanguageConfig { name, concurrent } = do
+    MyriadConfig { prepareContainers, languagesDir } <- asks config
     logInfo ["Building image ", cs $ imageName lang]
-    exec_ ["docker build -t ", imageName lang, " ./languages/", cs name]
+    exec_ ["docker build -t ", imageName lang, " ", cs languagesDir </> cs name]
     setupQSems
     logInfo ["Built image ", cs $ imageName lang]
-    MyriadConfig { prepareContainers } <- asks config
     when_ prepareContainers $ setupContainer lang
     where
         setupQSems :: Myriadic m => m ()

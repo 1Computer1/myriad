@@ -1,13 +1,10 @@
 module Main where
 
 import qualified Data.Text as T
+
 import Options.Applicative
 
-import Network.Wai.Handler.Warp (run)
-
-import Myriad.Core
-import Myriad.Docker
-import Myriad.Server
+import Myriad
 
 data Args = Args
     { configInput :: T.Text
@@ -26,10 +23,4 @@ parseArgs = execParser $ info (helper <*> args) (fullDesc <> progDesc "Run the M
 main :: IO ()
 main = do
     Args { configInput } <- parseArgs
-    env <- initEnv configInput
-    runMyriadT env do
-        buildAllImages
-        startCleanup
-        logInfo ["Finished Docker-related setup"]
-        logInfo ["Starting server"]
-    run (fromIntegral . port . config $ env) $ app env
+    runMyriadServer configInput
