@@ -8,19 +8,27 @@ import Myriad
 
 data Args = Args
     { configInput :: T.Text
+    , languagesDir :: T.Text
     }
 
 parseArgs :: IO Args
 parseArgs = execParser $ info (helper <*> args) (fullDesc <> progDesc "Run the Myriad server")
     where
-        args = Args <$> option str (mconcat
-            [ long "config"
-            , short 'c'
-            , help "Sets the Dhall configuration"
-            , metavar "DHALL"
-            ])
+        args = Args
+            <$> option str (mconcat
+                [ long "config"
+                , short 'c'
+                , help "Set the Dhall configuration"
+                , metavar "DHALL"
+                ])
+            <*> option str (mconcat
+                [ long "languages"
+                , short 'l'
+                , help "Set the languages directory"
+                , metavar "DIR"
+                ])
 
 main :: IO ()
 main = do
-    Args { configInput } <- parseArgs
-    runMyriadServer configInput
+    Args { configInput, languagesDir } <- parseArgs
+    runMyriadServer configInput languagesDir

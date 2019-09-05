@@ -36,6 +36,5 @@ let config : Config =
     , prepareContainers = False
     , cleanupInterval   = 30
     , port              = 8081
-    , languagesDir      = "./languages"
     }
 in config

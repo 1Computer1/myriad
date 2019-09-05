@@ -49,6 +49,7 @@ data EvalResult = EvalOk BL.ByteString | EvalTimedOut | EvalErrored
 
 data Env = Env
     { config :: MyriadConfig
+    , languagesDir :: T.Text
     , containers :: MVar (M.Map Language ContainerName)
     , containerSems :: MVar (M.Map Language QSem)
     , evalSems :: MVar (M.Map Language QSem)
@@ -61,7 +62,6 @@ data MyriadConfig = MyriadConfig
     , prepareContainers :: Bool
     , cleanupInterval :: Natural
     , port :: Natural
-    , languagesDir :: T.Text
     } deriving (Show, Generic)
 
 instance Interpret MyriadConfig
@@ -112,10 +112,11 @@ type Myriadic m = (MonadReader Env m, MonadLogger m, MonadLoggerIO m, MonadIO m,
 readConfig :: T.Text -> IO MyriadConfig
 readConfig = input auto
 
-initEnv :: T.Text -> IO Env
-initEnv configInput =
+initEnv :: T.Text -> T.Text -> IO Env
+initEnv configInput languagesDir =
         Env
     <$> readConfig configInput
+    <*> pure languagesDir
     <*> newMVar M.empty
     <*> newMVar M.empty
     <*> newMVar M.empty

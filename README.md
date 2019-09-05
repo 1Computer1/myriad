@@ -9,8 +9,8 @@ Arbitrary code execution server using Docker.
 
 ## Running
 
-- Make sure the configuration is filled out, see `config.dhall` for an example
-- Run `myriad --config path/to/config.dhall`
+- Make sure the configuration is filled out, see `config.example.dhall` for an example
+- Run `myriad --config /path/to/config.dhall --languages /path/to/languages/`
 
 ## Endpoints
 

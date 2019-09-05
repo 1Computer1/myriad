@@ -13,9 +13,9 @@ import Myriad.Core
 import Myriad.Docker
 import Myriad.Server
 
-runMyriadServer :: T.Text -> IO ()
-runMyriadServer configInput = do
-    env <- initEnv configInput
+runMyriadServer :: T.Text -> T.Text -> IO ()
+runMyriadServer configInput languagesDir = do
+    env <- initEnv configInput languagesDir
     runMyriadT env do
         buildAllImages
         startCleanup

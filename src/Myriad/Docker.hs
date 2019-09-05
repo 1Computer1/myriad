@@ -27,7 +27,7 @@ import Myriad.Core
 
 buildImage :: Myriadic m => LanguageConfig -> m ()
 buildImage lang@LanguageConfig { name, concurrent } = do
-    MyriadConfig { prepareContainers, languagesDir } <- asks config
+    Env { config = MyriadConfig { prepareContainers }, languagesDir } <- ask
     logInfo ["Building image ", cs $ imageName lang]
     exec_ ["docker build -t ", imageName lang, " ", cs languagesDir </> cs name]
     setupQSems
