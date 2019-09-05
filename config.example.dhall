@@ -24,7 +24,6 @@ let Config : Type =
     , prepareContainers : Bool                -- Whether to setup all containers on startup
     , cleanupInterval   : Natural             -- The interval in minutes to kill containers periodically
     , port              : Natural             -- Port to run on
-    , languagesDir      : Text                -- Where the languages are stored
     }
 
 -- Write your config here!
