@@ -4,8 +4,8 @@ Arbitrary code execution server using Docker.
 
 ## Install
 
-- Install [Stack 2+](https://docs.haskellstack.org/en/stable/README/)
-- Run `stack install`, a `myriad` executable will be installed
+- Install GHC and Cabal, see [the Haskell website](https://www.haskell.org/)
+- Run `cabal new-install`, a `myriad` executable will be installed
 
 ## Running
 
