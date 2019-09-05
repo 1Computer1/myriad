@@ -1,10 +1,4 @@
-cabal-version: 1.12
-
--- This file has been generated from package.yaml by hpack version 0.31.2.
---
--- see: https://github.com/sol/hpack
---
--- hash: 04a15c51f0ad270f323a3edd67bc229f0a0796226ff53a118338ec643b22b3c1
+cabal-version: 2.2
 
 name:           myriad
 version:        0.1.0.0
@@ -20,81 +14,82 @@ license:        MIT
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
-    README.md
+  README.md
 
 source-repository head
   type: git
   location: https://github.com/1computer1/myriad
 
-library
-  exposed-modules:
-      Myriad
-      Myriad.Core
-      Myriad.Docker
-      Myriad.Server
-  other-modules:
-      Paths_myriad
-  hs-source-dirs:
-      src
-  default-extensions: BlockArguments ConstraintKinds DataKinds DerivingStrategies DeriveFunctor DeriveGeneric FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PatternSynonyms PolyKinds RankNTypes ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeOperators TypeFamilies ViewPatterns
+common extensions
+  default-extensions:
+    BlockArguments
+    ConstraintKinds
+    DataKinds
+    DerivingStrategies
+    DeriveFunctor
+    DeriveGeneric
+    FlexibleContexts
+    FlexibleInstances
+    FunctionalDependencies
+    GADTs
+    GeneralizedNewtypeDeriving
+    LambdaCase
+    MultiParamTypeClasses
+    MultiWayIf
+    NamedFieldPuns
+    OverloadedStrings
+    PatternSynonyms
+    PolyKinds
+    RankNTypes
+    ScopedTypeVariables
+    StandaloneDeriving
+    TupleSections
+    TypeApplications
+    TypeOperators
+    TypeFamilies
+    ViewPatterns
+
+common deps
   build-depends:
-      aeson
-    , async
-    , base
-    , bytestring
-    , containers
-    , dhall
-    , filepath
-    , lifted-async
-    , lifted-base
-    , monad-control
-    , monad-logger
-    , mtl
-    , servant
-    , servant-server
-    , snowflake
-    , string-conversions
-    , text
-    , time
-    , transformers
-    , transformers-base
-    , typed-process
-    , wai
-    , warp
+      aeson ^>= 1.4.4.0
+    , async ^>= 2.2.2
+    , base ^>= 4.12.0.0
+    , bytestring ^>= 0.10.8.2
+    , containers ^>= 0.6.0.1
+    , dhall ^>= 1.24.0
+    , filepath ^>= 1.4.2.1
+    , lifted-async ^>= 0.10.0.4
+    , lifted-base ^>= 0.2.3.12
+    , monad-control ^>= 1.0.2.3
+    , monad-logger ^>= 0.3.30
+    , mtl ^>= 2.2.2
+    , servant ^>= 0.16.2
+    , servant-server ^>= 0.16.2
+    , snowflake ^>= 0.1.1.1
+    , string-conversions ^>= 0.4.0.1
+    , text ^>= 1.2.3.1
+    , time ^>= 1.8.0.2
+    , transformers ^>= 0.5.6.2
+    , transformers-base ^>= 0.4.5.2
+    , typed-process ^>= 0.2.6.0
+    , wai ^>= 3.2.2.1
+    , warp ^>= 3.2.28
   default-language: Haskell2010
 
+library
+  import: extensions, deps
+  exposed-modules:
+    Myriad
+    Myriad.Core
+    Myriad.Docker
+    Myriad.Server
+  hs-source-dirs: src
+
 executable myriad
+  import: extensions, deps
   main-is: Main.hs
-  other-modules:
-      Paths_myriad
-  hs-source-dirs:
-      app
-  default-extensions: BlockArguments ConstraintKinds DataKinds DerivingStrategies DeriveFunctor DeriveGeneric FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PatternSynonyms PolyKinds RankNTypes ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeOperators TypeFamilies ViewPatterns
+  hs-source-dirs: app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
-      aeson
-    , async
-    , base
-    , bytestring
-    , containers
-    , dhall
-    , filepath
-    , lifted-async
-    , lifted-base
-    , monad-control
-    , monad-logger
-    , mtl
-    , myriad
+      myriad
     , optparse-applicative
-    , servant
-    , servant-server
-    , snowflake
-    , string-conversions
-    , text
-    , time
-    , transformers
-    , transformers-base
-    , typed-process
-    , wai
-    , warp
-  default-language: Haskell2010
