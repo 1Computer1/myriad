@@ -20,12 +20,16 @@ parseArgs = execParser $ info (helper <*> args) (fullDesc <> progDesc "Run the M
                 , short 'c'
                 , help "Set the Dhall configuration"
                 , metavar "DHALL"
+                , value "./config.dhall"
+                , showDefault
                 ])
             <*> option str (mconcat
                 [ long "languages"
                 , short 'l'
                 , help "Set the languages directory"
                 , metavar "DIR"
+                , value "./languages/"
+                , showDefault
                 ])
 
 main :: IO ()
