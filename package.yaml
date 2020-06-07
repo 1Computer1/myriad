@@ -74,7 +74,7 @@ library:
   - -Wall
 
 executables:
-  lanx-exe:
+  myriad-exe:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
