@@ -35,7 +35,6 @@ import qualified Data.Map.Strict as M
 import Data.Snowflake
 import qualified Data.Text as T
 import Dhall
-import GHC.Generics (Generic)
 
 import Control.Concurrent.MVar.Lifted
 import Control.Concurrent.QSem.Lifted
@@ -64,7 +63,7 @@ data MyriadConfig = MyriadConfig
     , port :: Natural
     } deriving (Show, Generic)
 
-instance Interpret MyriadConfig
+instance FromDhall MyriadConfig
 
 data LanguageConfig = LanguageConfig
     { name :: Language
@@ -75,7 +74,7 @@ data LanguageConfig = LanguageConfig
     , retries :: Natural
     } deriving (Show, Generic)
 
-instance Interpret LanguageConfig
+instance FromDhall LanguageConfig
 
 newtype MyriadT m a = MyriadT { unMyriadT :: ReaderT Env (LoggingT m) a }
     deriving newtype
@@ -129,7 +128,7 @@ exec :: MonadIO m => [String] -> m BL.ByteString
 exec = readProcessInterleaved_ . shell . mconcat
 
 exec_ :: MonadIO m => [String] -> m ()
-exec_ = void . exec
+exec_ = (() <$) . exec
 
 logInfo :: MonadLogger m => [T.Text] -> m ()
 logInfo = logInfoN . mconcat

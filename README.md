@@ -2,15 +2,28 @@
 
 Arbitrary code execution server using Docker.  
 
-## Install
+## Requirements
 
-- Install GHC and Cabal, see [the Haskell website](https://www.haskell.org/)
-- Run `cabal new-install`, a `myriad` executable will be installed
+You can use either `stack` or `cabal`.  
+- `stack` should be >= 2.1.1, `cabal` should be >= 2.4.0.0.
+- GHC 8.8.3 is required if not already installed by `stack` or if using `cabal`.
 
-## Running
+#### Install Binary
 
-- Make sure the configuration is filled out, see `config.example.dhall` for an example
-- Run `myriad --config /path/to/config.dhall --languages /path/to/languages/`
+Make sure the place where `stack` or `cabal` places binaries is in your PATH.  
+- For `stack`, you can get it with `stack path --local-bin`.
+- For `cabal`, you should find it in `$HOME/.cabal/bin` (Linux) or `%APPDATA%\cabal\bin` (Windows).
+
+Run `stack install` or `cabal new-install` inside the project folder.  
+Make sure the configuration is filled out, see `config.example.dhall` for an example.  
+Run `myriad --config /path/to/config.dhall --languages /path/to/languages/`.  
+
+#### Install in Place
+
+Make sure the configuration is filled out, see `config.example.dhall` for an example.  
+Run `stack run` or `cabal v2-run` inside the project folder.  
+The config and languages folder will default to `./config.dhall` and `./languages`.  
+You can configure this with `--config` and `--languages`.  
 
 ## Endpoints
 

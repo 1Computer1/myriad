@@ -1,0 +1,87 @@
+name:                myriad
+version:             0.3.0.0
+github:              "1Computer1/myriad"
+license:             MIT
+author:              "1Computer"
+maintainer:          "onecomputer00@gmail.com"
+copyright:           "2020 1Computer"
+
+extra-source-files:
+- README.md
+
+synopsis:            Arbitrary code execution in Docker.
+category:            Server
+
+description:         Please see the README on GitHub at <https://github.com/1Computer1/myriad#readme>
+
+dependencies:
+- aeson
+- async
+- base >= 4.13 && < 5
+- bytestring
+- containers
+- dhall == 1.30.*
+- filepath
+- lifted-async
+- lifted-base
+- monad-control
+- monad-logger
+- mtl
+- servant
+- servant-server
+- snowflake
+- string-conversions
+- text
+- time
+- transformers
+- transformers-base
+- typed-process
+- wai
+- warp
+
+default-extensions:
+- BlockArguments
+- ConstraintKinds
+- DataKinds
+- DeriveAnyClass
+- DeriveGeneric
+- DeriveTraversable
+- DerivingStrategies
+- FlexibleContexts
+- FlexibleInstances
+- FunctionalDependencies
+- GADTs
+- GeneralizedNewtypeDeriving
+- KindSignatures
+- LambdaCase
+- MultiParamTypeClasses
+- MultiWayIf
+- NamedFieldPuns
+- OverloadedStrings
+- PatternSynonyms
+- PolyKinds
+- RankNTypes
+- ScopedTypeVariables
+- TupleSections
+- TypeApplications
+- TypeFamilies
+- TypeOperators
+- ViewPatterns
+
+library:
+  source-dirs: src
+  ghc-options:
+  - -Wall
+
+executables:
+  lanx-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -Wall
+    dependencies:
+    - myriad
+    - optparse-applicative
