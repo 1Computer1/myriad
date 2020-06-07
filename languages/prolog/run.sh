@@ -1,2 +1,2 @@
-printf %s "$1" > program.pl
+cat > program.pl
 swipl --quiet program.pl || true

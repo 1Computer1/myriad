@@ -1,3 +1,3 @@
 export GOCACHE=/tmp/"$CODEDIR"/cache
-printf %s "$1" > program.go
+cat > program.go
 go run program.go || true

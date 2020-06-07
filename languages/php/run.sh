@@ -1,2 +1,2 @@
-printf %s "$1" > program.php
+cat > program.php
 php program.php || true

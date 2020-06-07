@@ -1,2 +1,2 @@
-printf %s "$1" > program.clj
+cat > program.clj
 clojure program.clj || true

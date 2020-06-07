@@ -1,2 +1,2 @@
-printf %s "$1" > program.sh
+cat > program.sh
 bash program.sh || true

@@ -1,4 +1,4 @@
-printf %s "$1" > program.pas
+cat > program.pas
 
 # fpc does not use stderr, ld however does, capture both
 res="$(fpc program.pas 2>&1)"

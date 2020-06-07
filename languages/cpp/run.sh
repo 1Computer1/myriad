@@ -1,2 +1,2 @@
-printf %s "$1" > program.cpp
+cat > program.cpp
 g++ program.cpp -o program && ./program || true

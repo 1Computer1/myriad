@@ -1,2 +1,2 @@
-printf %s "$1" > program.fs
+cat > program.fs
 fsharpc --optimize- program.fs >/dev/null && mono program.exe || true

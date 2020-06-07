@@ -1,2 +1,2 @@
-printf %s "$1" > program.rkt
+cat > program.rkt
 racket program.rkt || true

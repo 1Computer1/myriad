@@ -1,2 +1,2 @@
-printf %s "$1" > program.ml
+cat > program.ml
 ocamlopt -cclib --static -o program program.ml && ./program || true

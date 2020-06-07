@@ -1,2 +1,2 @@
-printf %s "$1" > program.rb
+cat > program.rb
 ruby program.rb || true

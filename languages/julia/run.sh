@@ -1,2 +1,2 @@
-printf %s "$1" > program.jl
+cat > program.jl
 julia program.jl || true

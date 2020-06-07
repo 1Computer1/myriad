@@ -1,2 +1,2 @@
-printf %s "$1" > program.hs
+cat > program.hs
 ghc -e main program.hs || true

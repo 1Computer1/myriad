@@ -179,8 +179,9 @@ evalCode lang@LanguageConfig { name, timeout, retries } numRetries code = withCo
             exec_ ["docker exec ", cs cnt, " mkdir eval/", show snowflake]
             exec_ ["docker exec ", cs cnt, " chmod 777 eval/", show snowflake]
             -- User 1001 will be used for the actual execution so that they can't access `eval` itself
-            let args = ["exec", "-u1001:1001", "-w/tmp/eval/" <> show snowflake, cnt, "/bin/sh", "/var/run/run.sh", code]
-            output <- readProcessInterleaved_ $ proc "docker" args
+            let cmd = concat ["docker exec -i -u1001:1001 -w/tmp/eval/", show snowflake, " ", cnt, " /bin/sh /var/run/run.sh | head -c 4K"]
+                pr = setStdin (byteStringInput $ cs code) $ shell cmd
+            output <- readProcessInterleaved_ pr
             exec_ ["docker exec ", cnt, " rm -rf eval/", show snowflake]
             logInfo ["Ran code in container ", cs cnt, ", evaluation ", cs $ show snowflake]
             pure $ EvalOk output

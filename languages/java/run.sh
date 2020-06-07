@@ -1,2 +1,2 @@
-printf %s "$1" > Main.java
+cat > Main.java
 javac Main.java && java Main || true

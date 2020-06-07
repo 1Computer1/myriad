@@ -1,2 +1,2 @@
-printf %s "$1" > program.exs
+cat > program.exs
 elixir program.exs || true
