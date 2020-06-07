@@ -9,7 +9,6 @@ module Myriad.Core
     , MyriadConfig(..)
     , LanguageConfig(..)
     , MyriadT
-    , Myriad
     , Myriadic
     , runMyriadT
     , initEnv
@@ -30,7 +29,6 @@ import Control.Monad.Trans.Control
 import Control.Monad.Writer
 
 import qualified Data.ByteString.Lazy as BL
-import Data.Functor.Identity
 import qualified Data.Map.Strict as M
 import Data.Snowflake
 import qualified Data.Text as T
@@ -103,8 +101,6 @@ instance MonadBaseControl b m => MonadBaseControl b (MyriadT m) where
     type StM (MyriadT m) a = ComposeSt MyriadT m a
     liftBaseWith = defaultLiftBaseWith
     restoreM = defaultRestoreM
-
-type Myriad = MyriadT Identity
 
 type Myriadic m = (MonadReader Env m, MonadLogger m, MonadLoggerIO m, MonadIO m, MonadBase IO m, MonadBaseControl IO m)
 
