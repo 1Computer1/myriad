@@ -1,6 +1,33 @@
 languages:
+    - name: apl
+    - name: bash
+    - name: brainfuck
+    - name: c
+    - name: clojure
+    - name: cpp
+    - name: csharp
+    - name: elixir
+    - name: erlang
+    - name: fsharp
+    - name: go
     - name: haskell
+    - name: idris
+    - name: java
     - name: javascript
+    - name: julia
+    - name: lua
+    - name: nim
+    - name: ocaml
+    - name: pascal
+    - name: perl
+    - name: php
+    - name: prolog
+    - name: python
+    - name: r
+    - name: racket
+    - name: ruby
+    - name: rust
+    - name: typescript
 
 defaultLanguage:
     memory: 256m
