@@ -42,7 +42,7 @@ buildImage lang@Language { name, concurrent } = do
     exec_ ["docker build -t ", imageName lang, " ", cs languagesDir </> cs name]
     setupQSems
     logInfo ["Built image ", cs $ imageName lang]
-    when_ prepareContainers $ setupContainer lang
+    when prepareContainers . void $ setupContainer lang
     where
         setupQSems ::  Myriad ()
         setupQSems = do
@@ -62,7 +62,7 @@ buildAllImages = do
 startCleanup :: Myriad ()
 startCleanup = do
     Config { cleanupInterval } <- asks config
-    when_ (cleanupInterval > 0) $ do
+    when (cleanupInterval > 0) . void $ do
         let t = fromIntegral cleanupInterval * 60000000
         fork $ timer t
     where
@@ -179,7 +179,7 @@ evalCode lang@Language { name, timeout, retries } numRetries code = withContaine
         timer doneRef = do
             threadDelay $ fromIntegral timeout * 1000000
             done <- readMVar doneRef
-            unless_ done $ do
+            unless done . void $ do
                 writeMVar doneRef True
                 killContainer name
 
@@ -204,9 +204,3 @@ newContainerName Language { name } = do
 
 imageName :: Language -> ImageName
 imageName Language { name } = "1computer1/comp_iler:" <> cs name
-
-when_ :: Applicative f => Bool -> f a -> f ()
-when_ p = when p . void 
-
-unless_ :: Applicative f => Bool -> f a -> f ()
-unless_ p = unless p . void 
