@@ -1,14 +1,11 @@
 module Main where
 
-import qualified Data.Text as T
-
 import Options.Applicative
-
 import Myriad
 
 data Args = Args
-    { configInput :: T.Text
-    , languagesDir :: T.Text
+    { configPath :: FilePath
+    , languagesDir :: FilePath
     }
 
 parseArgs :: IO Args
@@ -18,9 +15,9 @@ parseArgs = execParser $ info (helper <*> args) (fullDesc <> progDesc "Run the M
             <$> option str (mconcat
                 [ long "config"
                 , short 'c'
-                , help "Set the Dhall configuration"
-                , metavar "DHALL"
-                , value "./config.dhall"
+                , help "Set the myriad configuration"
+                , metavar "PATH"
+                , value "./config.yaml"
                 , showDefault
                 ])
             <*> option str (mconcat
@@ -34,5 +31,5 @@ parseArgs = execParser $ info (helper <*> args) (fullDesc <> progDesc "Run the M
 
 main :: IO ()
 main = do
-    Args { configInput, languagesDir } <- parseArgs
-    runMyriadServer configInput languagesDir
+    Args { configPath, languagesDir } <- parseArgs
+    runMyriadServer configPath languagesDir

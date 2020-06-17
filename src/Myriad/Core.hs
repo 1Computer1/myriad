@@ -7,6 +7,7 @@ module Myriad.Core
     , EvalResult(..)
     , Env(..)
     , MyriadConfig(..)
+    , DefaultLanguageConfig(..)
     , LanguageConfig(..)
     , MyriadT
     , Myriadic
@@ -32,7 +33,7 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.Map.Strict as M
 import Data.Snowflake
 import qualified Data.Text as T
-import Dhall
+import Data.YAML
 
 import Control.Concurrent.MVar.Lifted
 import Control.Concurrent.QSem.Lifted
@@ -46,7 +47,7 @@ data EvalResult = EvalOk BL.ByteString | EvalTimedOut | EvalErrored
 
 data Env = Env
     { config :: MyriadConfig
-    , languagesDir :: T.Text
+    , languagesDir :: FilePath
     , containers :: MVar (M.Map Language ContainerName)
     , containerSems :: MVar (M.Map Language QSem)
     , evalSems :: MVar (M.Map Language QSem)
@@ -55,24 +56,55 @@ data Env = Env
 
 data MyriadConfig = MyriadConfig
     { languages :: [LanguageConfig]
+    , defaultLanguage :: DefaultLanguageConfig
     , buildConcurrently :: Bool
     , prepareContainers :: Bool
-    , cleanupInterval :: Natural
-    , port :: Natural
-    } deriving (Show, Generic)
+    , cleanupInterval :: Int
+    , port :: Int
+    } deriving (Show)
 
-instance FromDhall MyriadConfig
+instance FromYAML MyriadConfig where
+    parseYAML = withMap "config" $ \m -> MyriadConfig
+        <$> m .: "languages"
+        <*> m .: "defaultLanguage"
+        <*> m .: "buildConcurrently"
+        <*> m .: "prepareContainers"
+        <*> m .: "cleanupInterval"
+        <*> m .: "port"
+
+data DefaultLanguageConfig = DefaultLanguageConfig
+    { defMemory :: T.Text
+    , defCpus :: Double
+    , defTimeout :: Int
+    , defConcurrent :: Int
+    , defRetries :: Int
+    } deriving (Show)
+
+instance FromYAML DefaultLanguageConfig where
+    parseYAML = withMap "default language" $ \m -> DefaultLanguageConfig
+        <$> m .: "memory"
+        <*> m .: "cpus"
+        <*> m .: "timeout"
+        <*> m .: "concurrent"
+        <*> m .: "retries"
 
 data LanguageConfig = LanguageConfig
     { name :: Language
-    , memory :: T.Text
-    , cpus :: T.Text
-    , timeout :: Natural
-    , concurrent :: Natural
-    , retries :: Natural
-    } deriving (Show, Generic)
+    , memory :: Maybe T.Text
+    , cpus :: Maybe Double
+    , timeout :: Maybe Int
+    , concurrent :: Maybe Int
+    , retries :: Maybe Int
+    } deriving (Show)
 
-instance FromDhall LanguageConfig
+instance FromYAML LanguageConfig where
+    parseYAML = withMap "language" $ \m -> LanguageConfig
+        <$> m .: "name"
+        <*> m .:? "memory"
+        <*> m .:? "cpus"
+        <*> m .:? "timeout"
+        <*> m .:? "concurrent"
+        <*> m .:? "retries"
 
 newtype MyriadT m a = MyriadT { unMyriadT :: ReaderT Env (LoggingT m) a }
     deriving newtype
@@ -104,13 +136,17 @@ instance MonadBaseControl b m => MonadBaseControl b (MyriadT m) where
 
 type Myriadic m = (MonadReader Env m, MonadLogger m, MonadLoggerIO m, MonadIO m, MonadBase IO m, MonadBaseControl IO m)
 
-readConfig :: T.Text -> IO MyriadConfig
-readConfig = input auto
+readConfig :: FilePath -> IO MyriadConfig
+readConfig f = do
+    x <- BL.readFile f
+    case decode1 x of
+        Left (pos, e) -> error $ prettyPosWithSource pos x e
+        Right y -> pure y
 
-initEnv :: T.Text -> T.Text -> IO Env
-initEnv configInput languagesDir =
+initEnv :: FilePath -> FilePath -> IO Env
+initEnv configPath languagesDir =
         Env
-    <$> readConfig configInput
+    <$> readConfig configPath
     <*> pure languagesDir
     <*> newMVar M.empty
     <*> newMVar M.empty

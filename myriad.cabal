@@ -56,8 +56,8 @@ common shared
     , base >= 4.13 && < 5
     , bytestring
     , containers
-    , dhall == 1.30.*
     , filepath
+    , HsYAML >= 0.2
     , lifted-async
     , lifted-base
     , monad-control
@@ -90,7 +90,7 @@ library
       src
   ghc-options: -Wall
 
-executable myriad-exe
+executable myriad
   import: shared
   main-is: Main.hs
   other-modules:

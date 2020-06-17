@@ -12,6 +12,7 @@ module Myriad.Docker
 import Control.Monad.Reader
 
 import qualified Data.Map.Strict as M
+import Data.Maybe
 import Data.Snowflake
 import Data.String.Conversions
 
@@ -36,9 +37,9 @@ buildImage lang@LanguageConfig { name, concurrent } = do
     where
         setupQSems :: Myriadic m => m ()
         setupQSems = do
-            Env { containerSems, evalSems } <- ask
+            Env { config = MyriadConfig { defaultLanguage }, containerSems, evalSems } <- ask
             csem <- newQSem 1 -- We only want one container to be set up at a time
-            esem <- newQSem $ fromIntegral concurrent
+            esem <- newQSem . fromIntegral $ fromMaybe (defConcurrent defaultLanguage) concurrent
             mapMVar containerSems $ M.insert name csem
             mapMVar evalSems $ M.insert name esem
 
@@ -72,18 +73,18 @@ setupContainer lang@LanguageConfig { name, memory, cpus } = do
     where
         setup :: Myriadic m => m ContainerName
         setup = do
-            ref <- asks containers
+            Env { config = MyriadConfig { defaultLanguage }, containers = ref } <- ask
             cnt <- newContainerName lang
             exec_
                 [ "docker run --rm --name="
                 , cs cnt
                 -- User 1000 will be for setting up the environment
                 , " -u1000:1000 -w/tmp/ -dt --net=none --cpus="
-                , cs cpus
+                , show $ fromMaybe (defCpus defaultLanguage) cpus
                 , " -m="
-                , cs memory
+                , cs $ fromMaybe (defMemory defaultLanguage) memory
                 , " --memory-swap="
-                , cs memory
+                , cs $ fromMaybe (defMemory defaultLanguage) memory
                 , " "
                 , imageName lang
                 , " /bin/sh"
@@ -130,7 +131,7 @@ evalCode :: Myriadic m => LanguageConfig -> Int -> String -> m EvalResult
 evalCode lang@LanguageConfig { name, timeout, retries } numRetries code = withContainer \cnt -> do
     doneRef <- newMVar False -- For keeping track of if the evaluation is done, i.e. succeeded or timed out.
     void . fork $ timer doneRef -- `race` could not have been used here since some evals can't be cancelled.
-    snowflakeGen <- asks snowflakeGen
+    Env { config = MyriadConfig { defaultLanguage }, snowflakeGen } <- ask
     snowflake <- liftIO $ nextSnowflake snowflakeGen
     res <- try $ eval cnt snowflake
     case res of
@@ -145,7 +146,7 @@ evalCode lang@LanguageConfig { name, timeout, retries } numRetries code = withCo
                 -- Otherwise, the container was killed from another eval, so we should retry.
                 else do
                     writeMVar doneRef True
-                    if numRetries < fromIntegral retries
+                    if numRetries < (fromIntegral $ fromMaybe (defRetries defaultLanguage) retries)
                         then do
                             logError ["An exception occured in ", cs cnt, ", evaluation ", cs $ show snowflake, ", retrying:\n", cs $ show err]
                             evalCode lang (numRetries + 1) code
@@ -167,7 +168,8 @@ evalCode lang@LanguageConfig { name, timeout, retries } numRetries code = withCo
 
         timer :: Myriadic m => MVar Bool -> m ()
         timer doneRef = do
-            threadDelay $ fromIntegral timeout * 1000000
+            Env { config = MyriadConfig { defaultLanguage } } <- ask
+            threadDelay $ (fromIntegral $ fromMaybe (defTimeout defaultLanguage) timeout) * 1000000
             done <- readMVar doneRef
             unless_ done do
                 writeMVar doneRef True

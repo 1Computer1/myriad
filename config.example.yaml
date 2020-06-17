@@ -1,0 +1,15 @@
+languages:
+    - name: haskell
+    - name: javascript
+
+defaultLanguage:
+    memory: 256m
+    cpus: 0.25
+    timeout: 20
+    concurrent: 10
+    retries: 2
+
+buildConcurrently: true
+prepareContainers: false
+cleanupInterval: 30
+port: 8081

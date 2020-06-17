@@ -5,7 +5,6 @@ module Myriad
 import Control.Monad.Logger (runStdoutLoggingT)
 
 import Data.String.Conversions
-import qualified Data.Text as T
 
 import Network.Wai.Handler.Warp
 
@@ -13,9 +12,9 @@ import Myriad.Core
 import Myriad.Docker
 import Myriad.Server
 
-runMyriadServer :: T.Text -> T.Text -> IO ()
-runMyriadServer configInput languagesDir = do
-    env <- initEnv configInput languagesDir
+runMyriadServer :: FilePath -> FilePath -> IO ()
+runMyriadServer configPath languagesDir = do
+    env <- initEnv configPath languagesDir
     runMyriadT env do
         buildAllImages
         startCleanup

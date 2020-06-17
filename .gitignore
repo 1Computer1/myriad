@@ -10,4 +10,4 @@ stack.yaml.lock
 hie.yaml
 
 # other
-config.dhall
+config.yaml
