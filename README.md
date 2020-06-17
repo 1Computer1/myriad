@@ -1,6 +1,21 @@
 # Myriad
 
 Arbitrary code execution server using Docker.  
+Each language has its own Docker image and so each evaluation will run in the respective language's locked-down container.  
+
+Features include:
+
+- Building images on startup.
+- Preparing containers on startup or on demand.
+- Periodically cleanup running containers.
+- Customizable settings for each image:
+    - Maximum memory usage.
+    - Maximum CPU usage.
+    - Maximum evaluation time.
+    - Maximum concurrent evaluations.
+    - Maximum number of retries.
+
+Requires Docker 18+ to operate.  
 
 ## Download Pre-Built Binary
 
@@ -20,7 +35,7 @@ Make sure the place where `stack` or `cabal` places binaries is in your PATH.
 Run `stack install` or `cabal new-install` inside the project folder.  
 Or, to build within the project, run `stack build` or `cabal new-build`.  
 
-## Configuration
+## Configure and Run
 
 Make sure the configuration is filled out, see `config.example.yaml` for an example.  
 Run `myriad` (or `stack run` or `cabal new-run` if you built within the project) to start the server.  
