@@ -237,7 +237,7 @@ newContainerName :: Language -> Myriad ContainerName
 newContainerName lang = do
     snowflakeGen <- gview #snowflakeGen
     snowflake <- liftIO $ nextSnowflake snowflakeGen
-    pure $ "comp_iler-" <> cs (lang ^. #name) <> "-" <> show snowflake
+    pure $ "myriad-" <> cs (lang ^. #name) <> "-" <> show snowflake
 
 imageName :: Language -> ImageName
-imageName lang = "1computer1/comp_iler:" <> cs (lang ^. #name)
+imageName lang = "1computer1/myriad:" <> cs (lang ^. #name)
