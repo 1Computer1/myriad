@@ -1,3 +1,13 @@
-.stack-work/
-*~
+# cabal
+dist-newstyle
+cabal.project.local
+
+# stack
+.stack-work
+stack.yaml.lock
+
+# hie
+hie.yaml
+
+# other
 config.dhall

@@ -1,10 +1,4 @@
-cabal-version: 1.12
-
--- This file has been generated from package.yaml by hpack version 0.33.0.
---
--- see: https://github.com/sol/hpack
---
--- hash: 7ac33d24f9c1b722048859c29f93bcf4d4963bb94858761a3779b15500ad44fe
+cabal-version:  2.2
 
 name:           myriad
 version:        0.3.0.0
@@ -26,7 +20,63 @@ source-repository head
   type: git
   location: https://github.com/1Computer1/myriad
 
+common shared
+  default-language: Haskell2010
+  default-extensions:
+      BlockArguments
+      ConstraintKinds
+      DataKinds
+      DeriveAnyClass
+      DeriveGeneric
+      DeriveTraversable
+      DerivingStrategies
+      FlexibleContexts
+      FlexibleInstances
+      FunctionalDependencies
+      GADTs
+      GeneralizedNewtypeDeriving
+      KindSignatures
+      LambdaCase
+      MultiParamTypeClasses
+      MultiWayIf
+      NamedFieldPuns
+      OverloadedStrings
+      PatternSynonyms
+      PolyKinds
+      RankNTypes
+      ScopedTypeVariables
+      TupleSections
+      TypeApplications
+      TypeFamilies
+      TypeOperators
+      ViewPatterns
+  build-depends:
+      aeson
+    , async
+    , base >= 4.13 && < 5
+    , bytestring
+    , containers
+    , dhall == 1.30.*
+    , filepath
+    , lifted-async
+    , lifted-base
+    , monad-control
+    , monad-logger
+    , mtl
+    , servant
+    , servant-server
+    , snowflake
+    , string-conversions
+    , text
+    , time
+    , transformers
+    , transformers-base
+    , typed-process
+    , wai
+    , warp
+
 library
+  import: shared
   exposed-modules:
       Myriad
       Myriad.Core
@@ -34,68 +84,22 @@ library
       Myriad.Server
   other-modules:
       Paths_myriad
+  autogen-modules:
+      Paths_myriad
   hs-source-dirs:
       src
-  default-extensions: BlockArguments ConstraintKinds DataKinds DeriveAnyClass DeriveGeneric DeriveTraversable DerivingStrategies FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PatternSynonyms PolyKinds RankNTypes ScopedTypeVariables TupleSections TypeApplications TypeFamilies TypeOperators ViewPatterns
   ghc-options: -Wall
-  build-depends:
-      aeson
-    , async
-    , base >=4.13 && <5
-    , bytestring
-    , containers
-    , dhall ==1.30.*
-    , filepath
-    , lifted-async
-    , lifted-base
-    , monad-control
-    , monad-logger
-    , mtl
-    , servant
-    , servant-server
-    , snowflake
-    , string-conversions
-    , text
-    , time
-    , transformers
-    , transformers-base
-    , typed-process
-    , wai
-    , warp
-  default-language: Haskell2010
 
 executable myriad-exe
+  import: shared
   main-is: Main.hs
   other-modules:
       Paths_myriad
+  autogen-modules:
+      Paths_myriad
   hs-source-dirs:
       app
-  default-extensions: BlockArguments ConstraintKinds DataKinds DeriveAnyClass DeriveGeneric DeriveTraversable DerivingStrategies FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving KindSignatures LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PatternSynonyms PolyKinds RankNTypes ScopedTypeVariables TupleSections TypeApplications TypeFamilies TypeOperators ViewPatterns
   ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-depends:
-      aeson
-    , async
-    , base >=4.13 && <5
-    , bytestring
-    , containers
-    , dhall ==1.30.*
-    , filepath
-    , lifted-async
-    , lifted-base
-    , monad-control
-    , monad-logger
-    , mtl
-    , myriad
+      myriad
     , optparse-applicative
-    , servant
-    , servant-server
-    , snowflake
-    , string-conversions
-    , text
-    , time
-    , transformers
-    , transformers-base
-    , typed-process
-    , wai
-    , warp
-  default-language: Haskell2010
