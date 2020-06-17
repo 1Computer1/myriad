@@ -1,3 +1,7 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE UndecidableInstances  #-}
+
 module Myriad.Config
     ( LanguageName
     , Config(..)
@@ -10,24 +14,88 @@ import           Data.Maybe
 import qualified Data.Text as T
 import           Data.YAML
 
+import Optics
+
 type LanguageName = T.Text
 
-data Config = Config
-    { languages :: [Language]
-    , buildConcurrently :: Bool
-    , prepareContainers :: Bool
-    , cleanupInterval :: Int
-    , port :: Int
+data Language = Language
+    { _name :: LanguageName
+    , _memory :: T.Text
+    , _cpus :: Double
+    , _timeout :: Int
+    , _concurrent :: Int
+    , _retries :: Int
     } deriving (Show)
 
-data Language = Language
-    { name :: LanguageName
-    , memory :: T.Text
-    , cpus :: Double
-    , timeout :: Int
-    , concurrent :: Int
-    , retries :: Int
+makeFieldLabelsWith classUnderscoreNoPrefixFields ''Language
+
+data Config = Config
+    { _languages :: [Language]
+    , _buildConcurrently :: Bool
+    , _prepareContainers :: Bool
+    , _cleanupInterval :: Int
+    , _port :: Int
     } deriving (Show)
+
+makeFieldLabelsWith classUnderscoreNoPrefixFields ''Config
+
+data DefaultLanguage = DefaultLanguage
+    { _memory :: T.Text
+    , _cpus :: Double
+    , _timeout :: Int
+    , _concurrent :: Int
+    , _retries :: Int
+    } deriving (Show)
+
+makeFieldLabelsWith classUnderscoreNoPrefixFields ''DefaultLanguage
+
+instance FromYAML DefaultLanguage where
+    parseYAML = withMap "default language" $ \m -> DefaultLanguage
+        <$> m .: "memory"
+        <*> m .: "cpus"
+        <*> m .: "timeout"
+        <*> m .: "concurrent"
+        <*> m .: "retries"
+
+data RawLanguage = RawLanguage
+    { _name :: LanguageName
+    , _memory :: Maybe T.Text
+    , _cpus :: Maybe Double
+    , _timeout :: Maybe Int
+    , _concurrent :: Maybe Int
+    , _retries :: Maybe Int
+    } deriving (Show)
+
+makeFieldLabelsWith classUnderscoreNoPrefixFields ''RawLanguage
+
+instance FromYAML RawLanguage where
+    parseYAML = withMap "language" $ \m -> RawLanguage
+        <$> m .: "name"
+        <*> m .:? "memory"
+        <*> m .:? "cpus"
+        <*> m .:? "timeout"
+        <*> m .:? "concurrent"
+        <*> m .:? "retries"
+
+data RawConfig = RawConfig
+    { _languages :: [RawLanguage]
+    , _defaultLanguage :: DefaultLanguage
+    , _buildConcurrently :: Bool
+    , _prepareContainers :: Bool
+    , _cleanupInterval :: Int
+    , _port :: Int
+    } deriving (Show)
+
+makeFieldLabelsWith classUnderscoreNoPrefixFields ''RawConfig
+
+instance FromYAML RawConfig where
+    parseYAML = withMap "config" $ \m -> RawConfig
+        <$> m .: "languages"
+        <*> m .: "defaultLanguage"
+        <*> m .: "buildConcurrently"
+        <*> m .: "prepareContainers"
+        <*> m .: "cleanupInterval"
+        <*> m .: "port"
 
 readConfig :: FilePath -> IO Config
 readConfig = fmap fromRawConfig . readRawConfig
@@ -42,72 +110,20 @@ readRawConfig f = do
 fromRawConfig :: RawConfig -> Config
 fromRawConfig r =
     Config
-        { languages = map (fromRawLanguage $ rawDefaultLanguage r) $ rawLanguages r
-        , buildConcurrently = rawBuildConcurrently r
-        , prepareContainers = rawPrepareContainers r
-        , cleanupInterval = rawCleanupInterval r
-        , port = rawPort r
+        { _languages = map (fromRawLanguage (r ^. #defaultLanguage)) $ r ^. #languages
+        , _buildConcurrently = r ^. #buildConcurrently
+        , _prepareContainers = r ^. #prepareContainers
+        , _cleanupInterval = r ^. #cleanupInterval
+        , _port = r ^. #port
         }
 
 fromRawLanguage :: DefaultLanguage -> RawLanguage -> Language
-fromRawLanguage d l =
+fromRawLanguage d r =
     Language
-        { name = rawName l
-        , memory = fromMaybe (defMemory d) (rawMemory l)
-        , cpus = fromMaybe (defCpus d) (rawCpus l)
-        , timeout = fromMaybe (defTimeout d) (rawTimeout l)
-        , concurrent = fromMaybe (defConcurrent d) (rawConcurrent l)
-        , retries = fromMaybe (defRetries d) (rawRetries l)
+        { _name = r ^. #name
+        , _memory = fromMaybe (d ^. #memory) (r ^. #memory)
+        , _cpus = fromMaybe (d ^. #cpus) (r ^. #cpus)
+        , _timeout = fromMaybe (d ^. #timeout) (r ^. #timeout)
+        , _concurrent = fromMaybe (d ^. #concurrent) (r ^. #concurrent)
+        , _retries = fromMaybe (d ^. #retries) (r ^. #retries)
         }
-
-data RawConfig = RawConfig
-    { rawLanguages :: [RawLanguage]
-    , rawDefaultLanguage :: DefaultLanguage
-    , rawBuildConcurrently :: Bool
-    , rawPrepareContainers :: Bool
-    , rawCleanupInterval :: Int
-    , rawPort :: Int
-    } deriving (Show)
-
-instance FromYAML RawConfig where
-    parseYAML = withMap "config" $ \m -> RawConfig
-        <$> m .: "languages"
-        <*> m .: "defaultLanguage"
-        <*> m .: "buildConcurrently"
-        <*> m .: "prepareContainers"
-        <*> m .: "cleanupInterval"
-        <*> m .: "port"
-
-data DefaultLanguage = DefaultLanguage
-    { defMemory :: T.Text
-    , defCpus :: Double
-    , defTimeout :: Int
-    , defConcurrent :: Int
-    , defRetries :: Int
-    } deriving (Show)
-
-instance FromYAML DefaultLanguage where
-    parseYAML = withMap "default language" $ \m -> DefaultLanguage
-        <$> m .: "memory"
-        <*> m .: "cpus"
-        <*> m .: "timeout"
-        <*> m .: "concurrent"
-        <*> m .: "retries"
-
-data RawLanguage = RawLanguage
-    { rawName :: LanguageName
-    , rawMemory :: Maybe T.Text
-    , rawCpus :: Maybe Double
-    , rawTimeout :: Maybe Int
-    , rawConcurrent :: Maybe Int
-    , rawRetries :: Maybe Int
-    } deriving (Show)
-
-instance FromYAML RawLanguage where
-    parseYAML = withMap "language" $ \m -> RawLanguage
-        <$> m .: "name"
-        <*> m .:? "memory"
-        <*> m .:? "cpus"
-        <*> m .:? "timeout"
-        <*> m .:? "concurrent"
-        <*> m .:? "retries"

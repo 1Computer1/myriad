@@ -1,3 +1,4 @@
+{-# LANGUAGE TemplateHaskell      #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Myriad.Core
@@ -33,6 +34,8 @@ import Control.Concurrent.MVar.Lifted
 import Control.Concurrent.QSem.Lifted
 import System.Process.Typed
 
+import Optics
+
 import Myriad.Config
 
 type ContainerName = String
@@ -40,13 +43,15 @@ type ContainerName = String
 type ImageName = String
 
 data Env = Env
-    { config :: Config
-    , languagesDir :: FilePath
-    , containers :: MVar (M.Map LanguageName ContainerName)
-    , containerSems :: MVar (M.Map LanguageName QSem)
-    , evalSems :: MVar (M.Map LanguageName QSem)
-    , snowflakeGen :: SnowflakeGen
+    { _config :: Config
+    , _languagesDir :: FilePath
+    , _containers :: MVar (M.Map LanguageName ContainerName)
+    , _containerSems :: MVar (M.Map LanguageName QSem)
+    , _evalSems :: MVar (M.Map LanguageName QSem)
+    , _snowflakeGen :: SnowflakeGen
     }
+
+makeFieldLabelsWith classUnderscoreNoPrefixFields ''Env
 
 newtype MyriadT m a = MyriadT { unMyriadT :: ReaderT Env (LoggingT m) a }
     deriving newtype

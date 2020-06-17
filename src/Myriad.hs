@@ -8,7 +8,8 @@ import Data.String.Conversions
 
 import Network.Wai.Handler.Warp
 
-import Myriad.Config
+import Optics
+
 import Myriad.Core
 import Myriad.Docker
 import Myriad.Server
@@ -20,7 +21,7 @@ runMyriadServer configPath languagesDir = do
         buildAllImages
         startCleanup
         logInfo ["Finished Docker-related setup"]
-    let myriadPort = fromIntegral . port $ config env
+    let myriadPort = fromIntegral $ env ^. #config % #port
         onReady = runStdoutLoggingT $ logInfo ["Server started on port ", cs $ show myriadPort, "!"]
         settings = setPort myriadPort . setBeforeMainLoop onReady $ defaultSettings
     runSettings settings $ app env

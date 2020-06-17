@@ -16,7 +16,8 @@ import Control.Concurrent.Async.Lifted
 import Control.Concurrent.MVar.Lifted
 import Servant
 
-import Myriad.Config
+import Optics
+
 import Myriad.Core
 import Myriad.Docker
 
@@ -49,14 +50,14 @@ serverT = handleLanguages :<|> handleEval :<|> handleContainers :<|> handleClean
         handleLanguages :: Myriad [T.Text]
         handleLanguages = do
             logInfo ["GET /languages"]
-            Config { languages } <- asks config
-            pure . map name $ languages
+            languages <- gview $ #config % #languages
+            pure $ map (^. #name) languages
 
         handleEval :: EvalRequest -> Myriad EvalResponse
         handleEval EvalRequest { language, code } = do
             logInfo ["POST /eval"]
-            Config { languages } <- asks config
-            case find (\x -> name x == language) languages of
+            languages <- gview $ #config % #languages
+            case find (\x -> x ^. #name == language) languages of
                 Nothing  -> throwError $ err404 { errBody = "Language " <> cs language <> " was not found" }
                 Just cfg -> do
                     env <- ask
@@ -69,7 +70,7 @@ serverT = handleLanguages :<|> handleEval :<|> handleContainers :<|> handleClean
         handleContainers :: Myriad [T.Text]
         handleContainers = do
             logInfo ["GET /containers"]
-            containers <- asks containers >>= readMVar
+            containers <- gview #containers >>= readMVar
             pure . map cs $ M.elems containers
 
         handleCleanup :: Myriad [T.Text]
