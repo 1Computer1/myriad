@@ -1,2 +1,2 @@
 cat > Main.java
-javac Main.java && java Main || true
+javac Main.java && java Main

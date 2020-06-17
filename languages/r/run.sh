@@ -1,2 +1,2 @@
 cat > program.R
-Rscript program.R || true
+Rscript program.R

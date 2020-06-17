@@ -1,2 +1,2 @@
 cat > program.lua
-lua5.3 program.lua || true
+lua5.3 program.lua

@@ -1,2 +1,2 @@
 cat > program.pl
-perl program.pl || true
+perl program.pl

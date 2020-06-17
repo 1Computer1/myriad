@@ -1,1 +1,1 @@
-cat | node -p || true
+cat | node -p

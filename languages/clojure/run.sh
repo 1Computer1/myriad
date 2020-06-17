@@ -1,2 +1,2 @@
 cat > program.clj
-clojure program.clj || true
+clojure program.clj

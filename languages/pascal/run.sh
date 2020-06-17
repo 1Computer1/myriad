@@ -4,7 +4,7 @@ cat > program.pas
 res="$(fpc program.pas 2>&1)"
 
 if [ $? -eq 0 ]; then
-    ./program || true
+    ./program
 else
     printf %s "$res"
 fi

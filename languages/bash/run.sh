@@ -1,2 +1,2 @@
 cat > program.sh
-bash program.sh || true
+bash program.sh

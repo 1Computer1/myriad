@@ -1,2 +1,2 @@
 cat > program.apl
-apl --OFF -s -f program.apl || true
+apl --OFF -s -f program.apl

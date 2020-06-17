@@ -1,2 +1,2 @@
 cat > program.c
-gcc program.c -o program && ./program || true
+gcc program.c -o program && ./program

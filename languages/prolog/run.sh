@@ -1,2 +1,2 @@
 cat > program.pl
-swipl --quiet program.pl || true
+swipl --quiet program.pl

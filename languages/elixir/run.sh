@@ -1,2 +1,2 @@
 cat > program.exs
-elixir program.exs || true
+elixir program.exs

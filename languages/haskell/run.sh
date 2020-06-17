@@ -1,2 +1,2 @@
 cat > program.hs
-ghc -e main program.hs || true
+ghc -e main program.hs

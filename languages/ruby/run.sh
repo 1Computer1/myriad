@@ -1,2 +1,2 @@
 cat > program.rb
-ruby program.rb || true
+ruby program.rb

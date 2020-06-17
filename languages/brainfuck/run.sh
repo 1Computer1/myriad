@@ -1,1 +1,1 @@
-cat | bf || true
+cat | bf

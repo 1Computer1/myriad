@@ -1,2 +1,2 @@
 cat > program.php
-php program.php || true
+php program.php
