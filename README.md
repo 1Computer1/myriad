@@ -2,7 +2,12 @@
 
 Arbitrary code execution server using Docker.  
 
-## Requirements
+## Download
+
+Check the `Releases` tab for pre-built binaries.  
+The languages folder and the example configuration are also included.  
+
+## Installation from Source
 
 You can use either `stack` or `cabal`.  
 - `stack` should be >= 2.1.1, `cabal` should be >= 2.4.0.0.
