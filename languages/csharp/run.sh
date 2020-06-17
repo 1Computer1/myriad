@@ -1,2 +1,2 @@
 cat > program.cs
-csc program.cs >/dev/null && mono program.exe || true
+csc -nologo program.cs 2>/dev/null && mono program.exe || true
