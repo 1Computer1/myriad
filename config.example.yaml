@@ -3,7 +3,6 @@ languages:
     - name: bash
     - name: brainfuck
     - name: c
-    - name: clojure
     - name: cpp
     - name: csharp
     - name: elixir
