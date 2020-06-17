@@ -23,33 +23,25 @@ source-repository head
 common shared
   default-language: Haskell2010
   default-extensions:
-      BlockArguments
       ConstraintKinds
       DataKinds
       DeriveAnyClass
       DeriveGeneric
-      DeriveTraversable
       DerivingStrategies
       FlexibleContexts
       FlexibleInstances
       FunctionalDependencies
-      GADTs
       GeneralizedNewtypeDeriving
-      KindSignatures
       LambdaCase
       MultiParamTypeClasses
       MultiWayIf
       NamedFieldPuns
       OverloadedStrings
       PatternSynonyms
-      PolyKinds
-      RankNTypes
-      ScopedTypeVariables
       TupleSections
       TypeApplications
       TypeFamilies
       TypeOperators
-      ViewPatterns
   build-depends:
       aeson
     , async

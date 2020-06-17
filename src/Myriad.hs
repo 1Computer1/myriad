@@ -16,7 +16,7 @@ import Myriad.Server
 runMyriadServer :: FilePath -> FilePath -> IO ()
 runMyriadServer configPath languagesDir = do
     env <- initEnv configPath languagesDir
-    runMyriadT env do
+    runMyriadT env $ do
         buildAllImages
         startCleanup
         logInfo ["Finished Docker-related setup"]

@@ -62,12 +62,12 @@ buildAllImages = do
 startCleanup :: Myriad ()
 startCleanup = do
     Config { cleanupInterval } <- asks config
-    when_ (cleanupInterval > 0) do
+    when_ (cleanupInterval > 0) $ do
         let t = fromIntegral cleanupInterval * 60000000
         fork $ timer t
     where
         timer :: Int -> Myriad ()
-        timer t = forever do
+        timer t = forever $ do
             threadDelay t
             n <- killContainers
             logInfo ["Cleaned up ", cs $ show n, " containers"]
@@ -133,11 +133,11 @@ killContainer lang = do
 killContainers :: Myriad [ContainerName]
 killContainers = do
     containers <- asks containers >>= readMVar
-    xs <- forConcurrently (M.toList containers) \(k, v) -> (v,) <$> killContainer k
+    xs <- forConcurrently (M.toList containers) $ \(k, v) -> (v,) <$> killContainer k
     pure . map fst $ filter snd xs
 
 evalCode :: Language -> Int -> String -> Myriad EvalResult
-evalCode lang@Language { name, timeout, retries } numRetries code = withContainer \cnt -> do
+evalCode lang@Language { name, timeout, retries } numRetries code = withContainer $ \cnt -> do
     doneRef <- newMVar False -- For keeping track of if the evaluation is done, i.e. succeeded or timed out.
     void . fork $ timer doneRef -- `race` could not have been used here since some evals can't be cancelled.
     snowflakeGen <- asks snowflakeGen
@@ -171,7 +171,7 @@ evalCode lang@Language { name, timeout, retries } numRetries code = withContaine
             Env { containerSems, evalSems } <- ask
             csem <- (M.! name) <$> readMVar containerSems
             esem <- (M.! name) <$> readMVar evalSems
-            bracket_ (waitQSem esem) (signalQSem esem) do
+            bracket_ (waitQSem esem) (signalQSem esem) $ do
                 cnt <- bracket_ (waitQSem csem) (signalQSem csem) $ setupContainer lang
                 f cnt
 
@@ -179,7 +179,7 @@ evalCode lang@Language { name, timeout, retries } numRetries code = withContaine
         timer doneRef = do
             threadDelay $ fromIntegral timeout * 1000000
             done <- readMVar doneRef
-            unless_ done do
+            unless_ done $ do
                 writeMVar doneRef True
                 killContainer name
 
