@@ -7,25 +7,31 @@ module Myriad.Server
 import Control.Monad.Except
 import Control.Monad.Reader
 
-import Data.Aeson
-import Data.List (find)
+import           Data.Aeson
+import           Data.List (find)
 import qualified Data.Map as M
-import Data.String.Conversions
+import           Data.String.Conversions
 import qualified Data.Text as T
-import GHC.Generics
+import           GHC.Generics
 
 import Control.Concurrent.Async.Lifted
 import Control.Concurrent.MVar.Lifted
 import Servant
 
-import Myriad.Core
 import Myriad.Config
+import Myriad.Core
 import Myriad.Docker
 
 type Myriad = MyriadT Handler
 
-data EvalRequest = EvalRequest { language :: T.Text, code :: String } deriving (Generic, FromJSON)
-data EvalResponse = EvalResponse { result :: T.Text } deriving (Generic, ToJSON)
+data EvalRequest = EvalRequest
+    { language :: T.Text
+    , code :: String
+    } deriving (Generic, FromJSON)
+
+data EvalResponse = EvalResponse
+    { result :: T.Text
+    } deriving (Generic, ToJSON)
 
 type API
     =    "languages" :> Get '[JSON] [T.Text]

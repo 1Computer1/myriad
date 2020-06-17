@@ -8,8 +8,8 @@ import Data.String.Conversions
 
 import Network.Wai.Handler.Warp
 
-import Myriad.Core
 import Myriad.Config
+import Myriad.Core
 import Myriad.Docker
 import Myriad.Server
 

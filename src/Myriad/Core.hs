@@ -27,7 +27,7 @@ import Control.Monad.Writer
 
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Map.Strict as M
-import Data.Snowflake
+import           Data.Snowflake
 import qualified Data.Text as T
 
 import Control.Concurrent.MVar.Lifted

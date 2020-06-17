@@ -6,9 +6,9 @@ module Myriad.Config
     ) where
 
 import qualified Data.ByteString.Lazy as BL
-import Data.Maybe
+import           Data.Maybe
 import qualified Data.Text as T
-import Data.YAML
+import           Data.YAML
 
 type LanguageName = T.Text
 
@@ -29,26 +29,36 @@ data Language = Language
     , retries :: Int
     } deriving (Show)
 
+readConfig :: FilePath -> IO Config
+readConfig = fmap fromRawConfig . readRawConfig
+
+readRawConfig :: FilePath -> IO RawConfig
+readRawConfig f = do
+    x <- BL.readFile f
+    case decode1 x of
+        Left (pos, e) -> error $ prettyPosWithSource pos x e
+        Right y -> pure y
+
 fromRawConfig :: RawConfig -> Config
-fromRawConfig (r@RawConfig { rawLanguages, rawDefaultLanguage }) =
+fromRawConfig r =
     Config
-        { languages = map f rawLanguages
+        { languages = map (fromRawLanguage $ rawDefaultLanguage r) $ rawLanguages r
         , buildConcurrently = rawBuildConcurrently r
         , prepareContainers = rawPrepareContainers r
         , cleanupInterval = rawCleanupInterval r
         , port = rawPort r
         }
-    where
-        f :: RawLanguage -> Language
-        f l =
-            Language
-                { name = rawName l
-                , memory = fromMaybe (defMemory rawDefaultLanguage) (rawMemory l)
-                , cpus = fromMaybe (defCpus rawDefaultLanguage) (rawCpus l)
-                , timeout = fromMaybe (defTimeout rawDefaultLanguage) (rawTimeout l)
-                , concurrent = fromMaybe (defConcurrent rawDefaultLanguage) (rawConcurrent l)
-                , retries = fromMaybe (defRetries rawDefaultLanguage) (rawRetries l)
-                }
+
+fromRawLanguage :: DefaultLanguage -> RawLanguage -> Language
+fromRawLanguage d l =
+    Language
+        { name = rawName l
+        , memory = fromMaybe (defMemory d) (rawMemory l)
+        , cpus = fromMaybe (defCpus d) (rawCpus l)
+        , timeout = fromMaybe (defTimeout d) (rawTimeout l)
+        , concurrent = fromMaybe (defConcurrent d) (rawConcurrent l)
+        , retries = fromMaybe (defRetries d) (rawRetries l)
+        }
 
 data RawConfig = RawConfig
     { rawLanguages :: [RawLanguage]
@@ -101,13 +111,3 @@ instance FromYAML RawLanguage where
         <*> m .:? "timeout"
         <*> m .:? "concurrent"
         <*> m .:? "retries"
-
-readConfig :: FilePath -> IO Config
-readConfig = fmap fromRawConfig . readRawConfig
-
-readRawConfig :: FilePath -> IO RawConfig
-readRawConfig f = do
-    x <- BL.readFile f
-    case decode1 x of
-        Left (pos, e) -> error $ prettyPosWithSource pos x e
-        Right y -> pure y

@@ -12,8 +12,8 @@ module Myriad.Docker
 import Control.Monad.Reader
 
 import qualified Data.Map.Strict as M
-import Data.Snowflake
-import Data.String.Conversions
+import           Data.Snowflake
+import          Data.String.Conversions
 
 import Control.Concurrent.Async.Lifted
 import Control.Concurrent.Lifted (fork, threadDelay)
@@ -23,8 +23,8 @@ import Control.Exception.Lifted
 import System.FilePath ((</>))
 import System.Process.Typed
 
-import Myriad.Core
 import Myriad.Config
+import Myriad.Core
 
 type Myriad = MyriadT IO
 
