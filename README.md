@@ -2,10 +2,10 @@
 
 Arbitrary code execution server using Docker.  
 
-## Download
+## Download Pre-Built Binary
 
 Check the `Releases` tab for pre-built binaries.  
-The languages folder and the example configuration are also included.  
+The languages folder and an example configuration are also included.  
 
 ## Installation from Source
 
@@ -13,20 +13,17 @@ You can use either `stack` or `cabal`.
 - `stack` should be >= 2.1.1, `cabal` should be >= 2.4.0.0.
 - GHC 8.8.3 is required if not already installed by `stack` or if using `cabal`.
 
-#### Install Binary
-
 Make sure the place where `stack` or `cabal` places binaries is in your PATH.  
 - For `stack`, you can get it with `stack path --local-bin`.
 - For `cabal`, you should find it in `$HOME/.cabal/bin` (Linux) or `%APPDATA%\cabal\bin` (Windows).
 
 Run `stack install` or `cabal new-install` inside the project folder.  
-Make sure the configuration is filled out, see `config.example.yaml` for an example.  
-Run `myriad --config /path/to/config.yaml --languages /path/to/languages/`.  
+Or, to build within the project, run `stack build` or `cabal new-build`.  
 
-#### Install in Place
+## Configuration
 
 Make sure the configuration is filled out, see `config.example.yaml` for an example.  
-Run `stack run` or `cabal v2-run` inside the project folder.  
+Run `myriad` (or `stack run` or `cabal new-run` if you built within the project) to start the server.  
 The config and languages folder will default to `./config.yaml` and `./languages`.  
 You can configure this with `--config` and `--languages`.  
 
