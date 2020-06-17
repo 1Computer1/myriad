@@ -11,9 +11,10 @@ module Myriad.Docker
 
 import Control.Monad.Reader
 
+import qualified Data.ByteString.Lazy as BL
 import qualified Data.Map.Strict as M
 import           Data.Snowflake
-import          Data.String.Conversions
+import           Data.String.Conversions
 
 import Control.Concurrent.Async.Lifted
 import Control.Concurrent.Lifted (fork, threadDelay)
@@ -27,6 +28,12 @@ import Myriad.Config
 import Myriad.Core
 
 type Myriad = MyriadT IO
+
+data EvalResult
+    = EvalOk BL.ByteString
+    | EvalTimedOut
+    | EvalErrored
+    deriving (Show)
 
 buildImage :: Language -> Myriad ()
 buildImage lang@Language { name, concurrent } = do

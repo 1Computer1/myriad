@@ -4,7 +4,6 @@ module Myriad.Core
     ( Language
     , ContainerName
     , ImageName
-    , EvalResult(..)
     , Env(..)
     , MyriadT
     , runMyriadT
@@ -48,11 +47,6 @@ data Env = Env
     , evalSems :: MVar (M.Map LanguageName QSem)
     , snowflakeGen :: SnowflakeGen
     }
-
-data EvalResult
-    = EvalOk BL.ByteString
-    | EvalTimedOut
-    | EvalErrored
 
 newtype MyriadT m a = MyriadT { unMyriadT :: ReaderT Env (LoggingT m) a }
     deriving newtype
