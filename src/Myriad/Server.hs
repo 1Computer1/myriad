@@ -21,6 +21,8 @@ import Servant
 import Myriad.Core
 import Myriad.Docker
 
+type Myriad = MyriadT Handler
+
 data EvalRequest = EvalRequest { language :: T.Text, code :: String } deriving (Generic, FromJSON)
 data EvalResponse = EvalResponse { result :: T.Text } deriving (Generic, ToJSON)
 
@@ -36,35 +38,37 @@ app = serve (Proxy @API) . server
 server :: Env -> Server API
 server env = hoistServer (Proxy @API) (runMyriadT env) serverT
 
-serverT :: ServerT API (MyriadT Handler)
+serverT :: ServerT API Myriad
 serverT = handleLanguages :<|> handleEval :<|> handleContainers :<|> handleCleanup
     where
-        handleLanguages :: MyriadT Handler [T.Text]
+        handleLanguages :: Myriad [T.Text]
         handleLanguages = do
             logInfo ["GET /languages"]
             MyriadConfig { languages } <- asks config
             pure . map name $ languages
 
-        handleEval :: EvalRequest -> MyriadT Handler EvalResponse
+        handleEval :: EvalRequest -> Myriad EvalResponse
         handleEval EvalRequest { language, code } = do
             logInfo ["POST /eval"]
             MyriadConfig { languages } <- asks config
             case find (\x -> name x == language) languages of
                 Nothing  -> throwError $ err404 { errBody = "Language " <> cs language <> " was not found" }
                 Just cfg -> do
-                    res <- withAsync (evalCode cfg 0 $ cs code) wait
+                    env <- ask
+                    res <- withAsync (liftIO . runMyriadT env . evalCode cfg 0 $ cs code) wait
                     case res of
                         EvalErrored  -> throwError $ err500 { errBody = "Evaluation failed" }
                         EvalTimedOut -> throwError $ err504 { errBody = "Evaluation timed out" }
                         EvalOk xs    -> pure . EvalResponse $ cs xs
 
-        handleContainers :: MyriadT Handler [T.Text]
+        handleContainers :: Myriad [T.Text]
         handleContainers = do
             logInfo ["GET /containers"]
             containers <- asks containers >>= readMVar
             pure . map cs $ M.elems containers
 
-        handleCleanup :: MyriadT Handler [T.Text]
+        handleCleanup :: Myriad [T.Text]
         handleCleanup = do
             logInfo ["POST /cleanup"]
-            map cs <$> killContainers
+            env <- ask
+            liftIO $ map cs <$> runMyriadT env killContainers

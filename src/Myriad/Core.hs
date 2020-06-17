@@ -10,7 +10,6 @@ module Myriad.Core
     , DefaultLanguageConfig(..)
     , LanguageConfig(..)
     , MyriadT
-    , Myriadic
     , runMyriadT
     , initEnv
     , exec
@@ -133,8 +132,6 @@ instance MonadBaseControl b m => MonadBaseControl b (MyriadT m) where
     type StM (MyriadT m) a = ComposeSt MyriadT m a
     liftBaseWith = defaultLiftBaseWith
     restoreM = defaultRestoreM
-
-type Myriadic m = (MonadReader Env m, MonadLogger m, MonadLoggerIO m, MonadIO m, MonadBase IO m, MonadBaseControl IO m)
 
 readConfig :: FilePath -> IO MyriadConfig
 readConfig f = do

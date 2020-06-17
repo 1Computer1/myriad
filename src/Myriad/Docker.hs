@@ -26,7 +26,9 @@ import System.Process.Typed
 
 import Myriad.Core
 
-buildImage :: Myriadic m => LanguageConfig -> m ()
+type Myriad = MyriadT IO
+
+buildImage :: LanguageConfig -> Myriad ()
 buildImage lang@LanguageConfig { name, concurrent } = do
     Env { config = MyriadConfig { prepareContainers }, languagesDir } <- ask
     logInfo ["Building image ", cs $ imageName lang]
@@ -35,7 +37,7 @@ buildImage lang@LanguageConfig { name, concurrent } = do
     logInfo ["Built image ", cs $ imageName lang]
     when_ prepareContainers $ setupContainer lang
     where
-        setupQSems :: Myriadic m => m ()
+        setupQSems ::  Myriad ()
         setupQSems = do
             Env { config = MyriadConfig { defaultLanguage }, containerSems, evalSems } <- ask
             csem <- newQSem 1 -- We only want one container to be set up at a time
@@ -43,35 +45,35 @@ buildImage lang@LanguageConfig { name, concurrent } = do
             mapMVar containerSems $ M.insert name csem
             mapMVar evalSems $ M.insert name esem
 
-buildAllImages :: Myriadic m => m ()
+buildAllImages :: Myriad ()
 buildAllImages = do
     MyriadConfig { languages, buildConcurrently } <- asks config
     if buildConcurrently
         then forConcurrently_ languages buildImage
         else forM_ languages buildImage
 
-startCleanup :: Myriadic m => m ()
+startCleanup :: Myriad ()
 startCleanup = do
     MyriadConfig { cleanupInterval } <- asks config
     when_ (cleanupInterval > 0) do
         let t = fromIntegral cleanupInterval * 60000000
         fork $ timer t
     where
-        timer :: Int -> Myriadic m => m ()
+        timer :: Int -> Myriad ()
         timer t = forever do
             threadDelay t
             n <- killContainers
             logInfo ["Cleaned up ", cs $ show n, " containers"]
             timer t
 
-setupContainer :: Myriadic m => LanguageConfig -> m ContainerName
+setupContainer :: LanguageConfig -> Myriad ContainerName
 setupContainer lang@LanguageConfig { name, memory, cpus } = do
     cnts <- asks containers >>= readMVar
     case cnts M.!? name of
         Nothing  -> setup
         Just cnt -> pure cnt
     where
-        setup :: Myriadic m => m ContainerName
+        setup :: Myriad ContainerName
         setup = do
             Env { config = MyriadConfig { defaultLanguage }, containers = ref } <- ask
             cnt <- newContainerName lang
@@ -97,7 +99,7 @@ setupContainer lang@LanguageConfig { name, memory, cpus } = do
             logInfo ["Started container ", cs cnt]
             pure cnt
 
-killContainer :: Myriadic m => Language -> m Bool
+killContainer :: Language -> Myriad Bool
 killContainer lang = do
     containers <- asks containers >>= readMVar
     case containers M.!? lang of
@@ -110,7 +112,7 @@ killContainer lang = do
                     logError ["An exception occured when killing ", cs cnt, ":\n", cs $ show err]
                     pure False
     where
-        kill :: Myriadic m => ContainerName -> m (Maybe SomeException)
+        kill :: ContainerName -> Myriad (Maybe SomeException)
         kill cnt = do
             ref <- asks containers
             mapMVar ref $ M.delete lang
@@ -121,13 +123,13 @@ killContainer lang = do
                     logInfo ["Killed container ", cs cnt]
                     pure Nothing
 
-killContainers :: Myriadic m => m [ContainerName]
+killContainers :: Myriad [ContainerName]
 killContainers = do
     containers <- asks containers >>= readMVar
     xs <- forConcurrently (M.toList containers) \(k, v) -> (v,) <$> killContainer k
     pure . map fst $ filter snd xs
 
-evalCode :: Myriadic m => LanguageConfig -> Int -> String -> m EvalResult
+evalCode :: LanguageConfig -> Int -> String -> Myriad EvalResult
 evalCode lang@LanguageConfig { name, timeout, retries } numRetries code = withContainer \cnt -> do
     doneRef <- newMVar False -- For keeping track of if the evaluation is done, i.e. succeeded or timed out.
     void . fork $ timer doneRef -- `race` could not have been used here since some evals can't be cancelled.
@@ -157,7 +159,7 @@ evalCode lang@LanguageConfig { name, timeout, retries } numRetries code = withCo
             writeMVar doneRef True
             pure x
     where
-        withContainer :: Myriadic m => (ContainerName -> m a) -> m a
+        withContainer :: (ContainerName -> Myriad a) -> Myriad a
         withContainer f = do
             Env { containerSems, evalSems } <- ask
             csem <- (M.! name) <$> readMVar containerSems
@@ -166,7 +168,7 @@ evalCode lang@LanguageConfig { name, timeout, retries } numRetries code = withCo
                 cnt <- bracket_ (waitQSem csem) (signalQSem csem) $ setupContainer lang
                 f cnt
 
-        timer :: Myriadic m => MVar Bool -> m ()
+        timer :: MVar Bool -> Myriad ()
         timer doneRef = do
             Env { config = MyriadConfig { defaultLanguage } } <- ask
             threadDelay $ (fromIntegral $ fromMaybe (defTimeout defaultLanguage) timeout) * 1000000
@@ -175,7 +177,7 @@ evalCode lang@LanguageConfig { name, timeout, retries } numRetries code = withCo
                 writeMVar doneRef True
                 killContainer name
 
-        eval :: Myriadic m => ContainerName -> Snowflake -> m EvalResult
+        eval :: ContainerName -> Snowflake -> Myriad EvalResult
         eval cnt snowflake = do
             logInfo ["Running code in container ", cs cnt, ", evaluation ", cs $ show snowflake, ":\n", cs code]
             exec_ ["docker exec ", cs cnt, " mkdir eval/", show snowflake]
@@ -188,7 +190,7 @@ evalCode lang@LanguageConfig { name, timeout, retries } numRetries code = withCo
             logInfo ["Ran code in container ", cs cnt, ", evaluation ", cs $ show snowflake]
             pure $ EvalOk output
 
-newContainerName :: Myriadic m => LanguageConfig -> m ContainerName
+newContainerName :: LanguageConfig -> Myriad ContainerName
 newContainerName LanguageConfig { name } = do
     snowflakeGen <- asks snowflakeGen
     snowflake <- liftIO $ nextSnowflake snowflakeGen
