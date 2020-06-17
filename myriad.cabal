@@ -79,6 +79,7 @@ library
   import: shared
   exposed-modules:
       Myriad
+      Myriad.Config
       Myriad.Core
       Myriad.Docker
       Myriad.Server
