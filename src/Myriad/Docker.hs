@@ -58,8 +58,12 @@ buildAllImages :: Myriad ()
 buildAllImages = do
     config <- gview #config
     if config ^. #buildConcurrently
-        then forConcurrently_ (config ^. #languages) buildImage
-        else forM_ (config ^. #languages) buildImage
+        then do
+            logInfo ["Building all images concurrently"]
+            forConcurrently_ (config ^. #languages) buildImage
+        else do
+            logInfo ["Building all images sequentially"]
+            forM_ (config ^. #languages) buildImage
 
 startCleanup :: Myriad ()
 startCleanup = do
@@ -71,8 +75,9 @@ startCleanup = do
         timer :: Int -> Myriad ()
         timer t = forever $ do
             threadDelay t
+            logInfo ["Starting cleanup of containers"]
             n <- killContainers
-            logInfo ["Cleaned up ", cs $ show n, " containers"]
+            logInfo ["Cleaned up ", cs $ show n, " containers, next in ", cs $ show t, " seconds"]
             timer t
 
 setupContainer :: Language -> Myriad ContainerName
@@ -86,6 +91,7 @@ setupContainer lang = do
         setup = do
             ref <- gview #containers
             cnt <- newContainerName lang
+            logInfo ["Setting up new container ", cs cnt]
             exec_
                 [ "docker run --rm --name="
                 , cs cnt
@@ -105,7 +111,7 @@ setupContainer lang = do
             exec_ ["docker exec ", cnt, " mkdir eval"]
             exec_ ["docker exec ", cnt, " chmod 711 eval"]
             mapMVar ref $ M.insert (lang ^. #name) cnt
-            logInfo ["Started container ", cs cnt]
+            logInfo ["Started new container ", cs cnt]
             pure cnt
 
 killContainer :: LanguageName -> Myriad Bool
@@ -114,9 +120,12 @@ killContainer lang = do
     case containers M.!? lang of
         Nothing -> pure False
         Just cnt -> do
+            logInfo ["Killing container ", cs cnt]
             res <- kill cnt
             case res of
-                Nothing -> pure True
+                Nothing -> do
+                    logInfo ["Killed container ", cs cnt]
+                    pure True
                 Just err -> do
                     logError ["An exception occured when killing ", cs cnt, ":\n", cs $ show err]
                     pure False
@@ -128,20 +137,20 @@ killContainer lang = do
             res <- try $ exec_ ["docker kill ", cnt]
             case res of
                 Left err -> pure $ Just err
-                Right _ -> do
-                    logInfo ["Killed container ", cs cnt]
-                    pure Nothing
+                Right _ -> pure Nothing
 
 killContainers :: Myriad [ContainerName]
 killContainers = do
     containers <- gview #containers >>= readMVar
+    logInfo ["Starting killing of containers"]
     xs <- forConcurrently (M.toList containers) $ \(k, v) -> (v,) <$> killContainer k
+    logInfo ["Finished killing of containers"]
     pure . map fst $ filter snd xs
 
 evalCode :: Language -> Int -> String -> Myriad EvalResult
 evalCode lang numRetries code = withContainer $ \cnt -> do
     doneRef <- newMVar False -- For keeping track of if the evaluation is done, i.e. succeeded or timed out.
-    void . fork $ timer doneRef -- `race` could not have been used here since some evals can't be cancelled.
+    void . fork $ timer cnt doneRef -- `race` could not have been used here since some evals can't be cancelled.
     snowflakeGen <- gview #snowflakeGen
     snowflake <- liftIO $ nextSnowflake snowflakeGen
     res <- try $ eval cnt snowflake
@@ -152,17 +161,31 @@ evalCode lang numRetries code = withContainer $ \cnt -> do
             if done
                 -- If we find the eval is done from an exception, then it was timed out.
                 then do
-                    logError ["Code timed out in container ", cs cnt, ", evaluation ", cs $ show snowflake]
+                    logInfo ["Code timed out in container ", cs cnt, ", evaluation ", cs $ show snowflake]
                     pure EvalTimedOut
                 -- Otherwise, the container was killed from another eval, so we should retry.
                 else do
                     writeMVar doneRef True
                     if numRetries < fromIntegral (lang ^. #retries)
                         then do
-                            logError ["An exception occured in ", cs cnt, ", evaluation ", cs $ show snowflake, ", retrying:\n", cs $ show err]
+                            logInfo
+                                [ "An exception occured in "
+                                , cs cnt
+                                , ", evaluation "
+                                , cs $ show snowflake
+                                , "retrying:\n"
+                                , cs $ show err
+                                ]
                             evalCode lang (numRetries + 1) code
                         else do
-                            logError ["An exception occured in ", cs cnt, ", evaluation ", cs $ show snowflake, ":\n", cs $ show err]
+                            logInfo
+                                [ "An exception occured in "
+                                , cs cnt
+                                , ", evaluation "
+                                , cs $ show snowflake
+                                , ":\n"
+                                , cs $ show err
+                                ]
                             pure EvalErrored
         Right x -> do
             writeMVar doneRef True
@@ -177,13 +200,18 @@ evalCode lang numRetries code = withContainer $ \cnt -> do
                 cnt <- bracket_ (waitQSem csem) (signalQSem csem) $ setupContainer lang
                 f cnt
 
-        timer :: MVar Bool -> Myriad ()
-        timer doneRef = do
+        timer :: ContainerName -> MVar Bool -> Myriad ()
+        timer cnt doneRef = do
+            logDebug ["Starting timeout of ", cs . show $ lang ^. #timeout, " seconds for container ", cs cnt]
             threadDelay $ fromIntegral (lang ^. #timeout) * 1000000
             done <- readMVar doneRef
-            unless done . void $ do
-                writeMVar doneRef True
-                killContainer $ lang ^. #name
+            if done
+                then do
+                    logDebug ["Finished timeout for container ", cs cnt, ", but container already done"]
+                else do
+                    logDebug ["Finished timeout for container ", cs cnt, " and killing it"]
+                    writeMVar doneRef True
+                    void . killContainer $ lang ^. #name
 
         eval :: ContainerName -> Snowflake -> Myriad EvalResult
         eval cnt snowflake = do
@@ -191,8 +219,15 @@ evalCode lang numRetries code = withContainer $ \cnt -> do
             exec_ ["docker exec ", cs cnt, " mkdir eval/", show snowflake]
             exec_ ["docker exec ", cs cnt, " chmod 777 eval/", show snowflake]
             -- User 1001 will be used for the actual execution so that they can't access `eval` itself
-            let cmd = concat ["docker exec -i -u1001:1001 -w/tmp/eval/", show snowflake, " ", cnt, " /bin/sh /var/run/run.sh | head -c 4K"]
+            let cmd = mconcat
+                        [ "docker exec -i -u1001:1001 -w/tmp/eval/"
+                        , show snowflake
+                        , " "
+                        , cnt
+                        , " /bin/sh /var/run/run.sh | head -c 4K"
+                        ]
                 pr = setStdin (byteStringInput $ cs code) $ shell cmd
+            logDebug ["Executing with stdin `", cs cmd, "`"]
             output <- readProcessInterleaved_ pr
             exec_ ["docker exec ", cnt, " rm -rf eval/", show snowflake]
             logInfo ["Ran code in container ", cs cnt, ", evaluation ", cs $ show snowflake]

@@ -58,14 +58,20 @@ serverT = handleLanguages :<|> handleEval :<|> handleContainers :<|> handleClean
             logInfo ["POST /eval"]
             languages <- gview $ #config % #languages
             case find (\x -> x ^. #name == language) languages of
-                Nothing  -> throwError $ err404 { errBody = "Language " <> cs language <> " was not found" }
+                Nothing -> do
+                    logDebug ["Language ",  cs language , " was not found (404)"]
+                    throwError $ err404 { errBody = "Language " <> cs language <> " was not found" }
                 Just cfg -> do
                     env <- ask
                     res <- withAsync (liftIO . runMyriadT env . evalCode cfg 0 $ cs code) wait
                     case res of
-                        EvalErrored  -> throwError $ err500 { errBody = "Evaluation failed" }
-                        EvalTimedOut -> throwError $ err504 { errBody = "Evaluation timed out" }
-                        EvalOk xs    -> pure . EvalResponse $ cs xs
+                        EvalErrored -> do
+                            logDebug ["Evaluation failed (500)"]
+                            throwError $ err500 { errBody = "Evaluation failed" }
+                        EvalTimedOut -> do
+                            logDebug ["Evaluation timed out (504)"]
+                            throwError $ err504 { errBody = "Evaluation timed out" }
+                        EvalOk xs -> pure . EvalResponse $ cs xs
 
         handleContainers :: Myriad [T.Text]
         handleContainers = do

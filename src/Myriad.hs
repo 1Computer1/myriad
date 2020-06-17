@@ -22,6 +22,6 @@ runMyriadServer configPath languagesDir = do
         startCleanup
         logInfo ["Finished Docker-related setup"]
     let myriadPort = fromIntegral $ env ^. #config % #port
-        onReady = runStdoutLoggingT $ logInfo ["Server started on port ", cs $ show myriadPort, "!"]
+        onReady = runStdoutLoggingT $ logInfo ["Server started on http://localhost:", cs $ show myriadPort]
         settings = setPort myriadPort . setBeforeMainLoop onReady $ defaultSettings
     runSettings settings $ app env

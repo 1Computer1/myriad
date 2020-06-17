@@ -12,6 +12,8 @@ module Myriad.Core
     , exec
     , exec_
     , logInfo
+    , logDebug
+    , logWarn
     , logError
     , mapMVar
     , writeMVar
@@ -19,7 +21,7 @@ module Myriad.Core
 
 import Control.Monad.Base
 import Control.Monad.Except
-import Control.Monad.Logger hiding (logError, logInfo)
+import Control.Monad.Logger hiding (logError, logDebug, logWarn, logInfo)
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Trans.Control
@@ -28,6 +30,7 @@ import Control.Monad.Writer
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Map.Strict as M
 import           Data.Snowflake
+import           Data.String.Conversions
 import qualified Data.Text as T
 
 import Control.Concurrent.MVar.Lifted
@@ -94,14 +97,22 @@ initEnv configPath languagesDir =
 runMyriadT :: MonadIO m => Env -> MyriadT m a -> m a
 runMyriadT env = runStdoutLoggingT . flip runReaderT env . unMyriadT
 
-exec :: MonadIO m => [String] -> m BL.ByteString
-exec = readProcessInterleaved_ . shell . mconcat
+exec :: (MonadIO m, MonadLogger m) => [String] -> m BL.ByteString
+exec args = do
+    logDebug ["Executing `", cs $ mconcat args, "`"]
+    readProcessInterleaved_ . shell $ mconcat args
 
-exec_ :: MonadIO m => [String] -> m ()
-exec_ = (() <$) . exec
+exec_ :: (MonadIO m, MonadLogger m) => [String] -> m ()
+exec_ = void . exec
 
 logInfo :: MonadLogger m => [T.Text] -> m ()
 logInfo = logInfoN . mconcat
+
+logDebug :: MonadLogger m => [T.Text] -> m ()
+logDebug = logDebugN . mconcat
+
+logWarn :: MonadLogger m => [T.Text] -> m ()
+logWarn = logWarnN . mconcat
 
 logError :: MonadLogger m => [T.Text] -> m ()
 logError = logErrorN . mconcat
