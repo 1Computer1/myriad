@@ -9,10 +9,11 @@ module Myriad.Config
     , readConfig
     ) where
 
-import qualified Data.ByteString.Lazy as BL
+import           Data.Aeson
+import qualified Data.ByteString as B
 import           Data.Maybe
 import qualified Data.Text as T
-import           Data.YAML
+import           Data.Yaml
 
 import Optics
 
@@ -49,8 +50,8 @@ data DefaultLanguage = DefaultLanguage
 
 makeFieldLabelsWith classUnderscoreNoPrefixFields ''DefaultLanguage
 
-instance FromYAML DefaultLanguage where
-    parseYAML = withMap "default language" $ \m -> DefaultLanguage
+instance FromJSON DefaultLanguage where
+    parseJSON = withObject "default language" $ \m -> DefaultLanguage
         <$> m .: "memory"
         <*> m .: "cpus"
         <*> m .: "timeout"
@@ -68,8 +69,8 @@ data RawLanguage = RawLanguage
 
 makeFieldLabelsWith classUnderscoreNoPrefixFields ''RawLanguage
 
-instance FromYAML RawLanguage where
-    parseYAML = withMap "language" $ \m -> RawLanguage
+instance FromJSON RawLanguage where
+    parseJSON = withObject "language" $ \m -> RawLanguage
         <$> m .: "name"
         <*> m .:? "memory"
         <*> m .:? "cpus"
@@ -88,8 +89,8 @@ data RawConfig = RawConfig
 
 makeFieldLabelsWith classUnderscoreNoPrefixFields ''RawConfig
 
-instance FromYAML RawConfig where
-    parseYAML = withMap "config" $ \m -> RawConfig
+instance FromJSON RawConfig where
+    parseJSON = withObject "config" $ \m -> RawConfig
         <$> m .: "languages"
         <*> m .: "defaultLanguage"
         <*> m .: "buildConcurrently"
@@ -102,9 +103,9 @@ readConfig = fmap fromRawConfig . readRawConfig
 
 readRawConfig :: FilePath -> IO RawConfig
 readRawConfig f = do
-    x <- BL.readFile f
-    case decode1 x of
-        Left (pos, e) -> error $ prettyPosWithSource pos x e
+    x <- B.readFile f
+    case Data.Yaml.decodeEither' x of
+        Left e -> error $ prettyPrintParseException e
         Right y -> pure y
 
 fromRawConfig :: RawConfig -> Config

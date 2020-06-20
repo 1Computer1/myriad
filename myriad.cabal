@@ -50,7 +50,6 @@ common shared
     , bytestring
     , containers
     , filepath
-    , HsYAML >= 0.2
     , lifted-async
     , lifted-base
     , monad-control
@@ -68,6 +67,7 @@ common shared
     , typed-process
     , wai
     , warp
+    , yaml
 
 library
   import: shared
