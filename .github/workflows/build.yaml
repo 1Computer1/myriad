@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           FOUND=$(find dist-newstyle \( -name 'myriad' -o -name 'myriad.exe' \) -type f)
-          strip -s $FOUND
+          strip $FOUND
           gzip --best $FOUND
           echo ::set-output name=binary::$FOUND.gz
 
