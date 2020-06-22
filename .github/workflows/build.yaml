@@ -10,10 +10,10 @@ jobs:
       fail-fast: false
       matrix:
         ghc: ['8.8.3']
-        os: ['ubuntu-latest', 'macos-latest']
+        os: [ubuntu-latest, macos-latest]
         include: # GHC 8.8.3 fails to install on Windows
           - ghc: '8.6.5'
-          - os: 'windows-latest'
+            os: windows-latest
 
     runs-on: ${{ matrix.os }}
 
