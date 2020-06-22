@@ -224,7 +224,7 @@ evalCode lang numRetries code = withContainer $ \cnt -> do
                         , show snowflake
                         , " "
                         , cnt
-                        , " /bin/sh /var/run/run.sh | head -c 4K"
+                        , " /bin/sh /var/run/run.sh 2>&1 | head -c 4K"
                         ]
                 pr = setStdin (byteStringInput $ cs code) $ shell cmd
             logDebug ["Executing with stdin `", cs cmd, "`"]
