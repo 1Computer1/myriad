@@ -14,6 +14,7 @@ Features include:
     - Maximum evaluation time.
     - Maximum concurrent evaluations.
     - Maximum number of retries.
+    - Maximum output size.
 
 Requires Docker 18+ to operate.  
 
