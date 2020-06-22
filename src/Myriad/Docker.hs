@@ -69,15 +69,17 @@ startCleanup :: Myriad ()
 startCleanup = do
     config <- gview #config
     when (config ^. #cleanupInterval > 0) . void $ do
-        let t = fromIntegral (config ^. #cleanupInterval) * 60000000
+        let t = fromIntegral (config ^. #cleanupInterval)
         fork $ timer t
     where
+        -- Given time in minutes
         timer :: Int -> Myriad ()
         timer t = forever $ do
-            threadDelay t
+            -- Takes time in microseconds
+            threadDelay $ t  * 60000000
             logInfo ["Starting cleanup of containers"]
             n <- killContainers
-            logInfo ["Cleaned up ", cs $ show n, " containers, next in ", cs $ show t, " seconds"]
+            logInfo ["Cleaned up ", cs $ show n, " containers, next in ", cs $ show t, " minutes"]
             timer t
 
 setupContainer :: Language -> Myriad ContainerName
@@ -202,8 +204,11 @@ evalCode lang numRetries code = withContainer $ \cnt -> do
 
         timer :: ContainerName -> MVar Bool -> Myriad ()
         timer cnt doneRef = do
-            logDebug ["Starting timeout of ", cs . show $ lang ^. #timeout, " seconds for container ", cs cnt]
-            threadDelay $ fromIntegral (lang ^. #timeout) * 1000000
+            -- Given time in seconds
+            let t = fromIntegral $ lang ^. #timeout
+            logDebug ["Starting timeout of ", cs . show $ t, " seconds for container ", cs cnt]
+            -- Takes time in microseconds
+            threadDelay $ t * 1000000
             done <- readMVar doneRef
             if done
                 then do
