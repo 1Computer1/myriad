@@ -26,6 +26,7 @@ data Language = Language
     , _timeout :: Int
     , _concurrent :: Int
     , _retries :: Int
+    , _outputLimit :: T.Text
     } deriving (Show)
 
 makeFieldLabelsWith classUnderscoreNoPrefixFields ''Language
@@ -46,6 +47,7 @@ data DefaultLanguage = DefaultLanguage
     , _timeout :: Int
     , _concurrent :: Int
     , _retries :: Int
+    , _outputLimit :: T.Text
     } deriving (Show)
 
 makeFieldLabelsWith classUnderscoreNoPrefixFields ''DefaultLanguage
@@ -57,6 +59,7 @@ instance FromJSON DefaultLanguage where
         <*> m .: "timeout"
         <*> m .: "concurrent"
         <*> m .: "retries"
+        <*> m .: "outputLimit"
 
 data RawLanguage = RawLanguage
     { _name :: LanguageName
@@ -65,6 +68,7 @@ data RawLanguage = RawLanguage
     , _timeout :: Maybe Int
     , _concurrent :: Maybe Int
     , _retries :: Maybe Int
+    , _outputLimit :: Maybe T.Text
     } deriving (Show)
 
 makeFieldLabelsWith classUnderscoreNoPrefixFields ''RawLanguage
@@ -77,6 +81,7 @@ instance FromJSON RawLanguage where
         <*> m .:? "timeout"
         <*> m .:? "concurrent"
         <*> m .:? "retries"
+        <*> m .:? "outputLimit"
 
 data RawConfig = RawConfig
     { _languages :: [RawLanguage]
@@ -127,4 +132,5 @@ fromRawLanguage d r =
         , _timeout = fromMaybe (d ^. #timeout) (r ^. #timeout)
         , _concurrent = fromMaybe (d ^. #concurrent) (r ^. #concurrent)
         , _retries = fromMaybe (d ^. #retries) (r ^. #retries)
+        , _outputLimit = fromMaybe (d ^. #outputLimit) (r ^. #outputLimit)
         }

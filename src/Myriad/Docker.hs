@@ -214,17 +214,19 @@ evalCode lang numRetries code = withContainer $ \cnt -> do
                     void . killContainer $ lang ^. #name
 
         eval :: ContainerName -> Snowflake -> Myriad EvalResult
-        eval cnt snowflake = do
+        eval cnt snowflake = do 
             logInfo ["Running code in container ", cs cnt, ", evaluation ", cs $ show snowflake, ":\n", cs code]
             exec_ ["docker exec ", cs cnt, " mkdir eval/", show snowflake]
             exec_ ["docker exec ", cs cnt, " chmod 777 eval/", show snowflake]
             -- User 1001 will be used for the actual execution so that they can't access `eval` itself
-            let cmd = mconcat
+            let limit = lang ^. #outputLimit
+                cmd = mconcat
                         [ "docker exec -i -u1001:1001 -w/tmp/eval/"
                         , show snowflake
                         , " "
                         , cnt
-                        , " /bin/sh /var/run/run.sh 2>&1 | head -c 4K"
+                        , " /bin/sh /var/run/run.sh 2>&1 | head -c "
+                        , cs limit
                         ]
                 pr = setStdin (byteStringInput $ cs code) $ shell cmd
             logDebug ["Executing with stdin `", cs cmd, "`"]

@@ -34,6 +34,7 @@ defaultLanguage:
     timeout: 20
     concurrent: 10
     retries: 2
+    outputLimit: 4k
 
 buildConcurrently: true
 prepareContainers: false
