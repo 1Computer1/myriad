@@ -25,11 +25,14 @@ jobs:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: '3.2'
 
-      - name: Cache Cabal
-        uses: actions/cache@v1.2.0
-        with:
-          path: ~/.cabal
-          key: ${{ runner.OS }}-${{ matrix.ghc }}-cabal-0
+      # - name: Freeze
+      #   run: cabal freeze
+
+      # - name: Cache Cabal
+      #   uses: actions/cache@v1.2.0
+      #   with:
+      #     path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+      #     key: ${{ runner.OS }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
 
       - name: Build Myriad
         run: cabal build -O2 myriad:exe:myriad
@@ -39,9 +42,10 @@ jobs:
         shell: bash
         run: |
           FOUND=$(find dist-newstyle \( -name 'myriad' -o -name 'myriad.exe' \) -type f)
-          strip $FOUND
-          gzip --best $FOUND
-          echo ::set-output name=binary::$FOUND.gz
+          cp $FOUND myriad
+          cp config.example.yaml config.yaml
+          strip myriad
+          tar -cvzf myriad-${{ github.event.release.name }}-${{ runner.OS }}-${{ matrix.ghc }}.tar.gz config.yaml languages myriad
 
       - name: Upload Binary
         uses: actions/upload-release-asset@v1.0.2
@@ -49,6 +53,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ steps.find_binary.outputs.binary }}
-          asset_name: myriad-${{ github.event.release.name }}-${{ runner.OS }}-${{ matrix.ghc }}.gz
+          asset_path: myriad-${{ github.event.release.name }}-${{ runner.OS }}-${{ matrix.ghc }}.tar.gz
+          asset_name: myriad-${{ github.event.release.name }}-${{ runner.OS }}-${{ matrix.ghc }}.tar.gz
           asset_content_type: application/gzip
