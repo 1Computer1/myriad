@@ -1,0 +1,52 @@
+name: Builds
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        ghc: ['8.8.3']
+        os: ['ubuntu-latest', 'macos-latest']
+        include: # GHC 8.8.3 fails to install on Windows
+          - ghc: '8.6.5'
+          - os: 'windows-latest'
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-haskell@v1.1.1
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: '3.2'
+
+      - name: Cache Cabal
+        uses: actions/cache@v1.2.0
+        with:
+          path: ~/.cabal
+          key: ${{ runner.OS }}-${{ matrix.ghc }}-cabal-0
+
+      - name: Build Myriad
+        run: cabal build -O2 myriad:exe:myriad
+
+      - name: Find Binary
+        id: find_binary
+        shell: bash
+        run: |
+          FOUND=$(find dist-newstyle \( -name 'myriad' -o -name 'myriad.exe' \) -type f)
+          strip -s $FOUND
+          gzip --best $FOUND
+          echo ::set-output name=binary::$FOUND.gz
+
+      - name: Upload Binary
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ steps.find_binary.outputs.binary }}
+          asset_name: myriad-${{ github.event.release.name }}-${{ runner.OS }}-${{ matrix.ghc }}.gz
+          asset_content_type: application/gzip
