@@ -1,7 +1,7 @@
 cabal-version:  2.2
 
 name:           myriad
-version:        0.5.0.1
+version:        0.5.0.2
 synopsis:       Arbitrary code execution in Docker.
 description:    Please see the README on GitHub at <https://github.com/1Computer1/myriad#readme>
 category:       Server
