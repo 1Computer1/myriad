@@ -21,6 +21,7 @@ type LanguageName = T.Text
 
 data Language = Language
     { _name :: LanguageName
+    , _runtime :: T.Text
     , _memory :: T.Text
     , _cpus :: Double
     , _timeout :: Int
@@ -42,7 +43,8 @@ data Config = Config
 makeFieldLabelsWith classUnderscoreNoPrefixFields ''Config
 
 data DefaultLanguage = DefaultLanguage
-    { _memory :: T.Text
+    { _runtime :: T.Text
+    , _memory :: T.Text
     , _cpus :: Double
     , _timeout :: Int
     , _concurrent :: Int
@@ -54,7 +56,8 @@ makeFieldLabelsWith classUnderscoreNoPrefixFields ''DefaultLanguage
 
 instance FromJSON DefaultLanguage where
     parseJSON = withObject "default language" $ \m -> DefaultLanguage
-        <$> m .: "memory"
+        <$> m .: "runtime"
+        <*> m .: "memory"
         <*> m .: "cpus"
         <*> m .: "timeout"
         <*> m .: "concurrent"
@@ -63,6 +66,7 @@ instance FromJSON DefaultLanguage where
 
 data RawLanguage = RawLanguage
     { _name :: LanguageName
+    , _runtime :: Maybe T.Text
     , _memory :: Maybe T.Text
     , _cpus :: Maybe Double
     , _timeout :: Maybe Int
@@ -76,6 +80,7 @@ makeFieldLabelsWith classUnderscoreNoPrefixFields ''RawLanguage
 instance FromJSON RawLanguage where
     parseJSON = withObject "language" $ \m -> RawLanguage
         <$> m .: "name"
+        <*> m .:? "runtime"
         <*> m .:? "memory"
         <*> m .:? "cpus"
         <*> m .:? "timeout"
@@ -127,6 +132,7 @@ fromRawLanguage :: DefaultLanguage -> RawLanguage -> Language
 fromRawLanguage d r =
     Language
         { _name = r ^. #name
+        , _runtime = fromMaybe (d ^. #runtime) (r ^. #runtime)
         , _memory = fromMaybe (d ^. #memory) (r ^. #memory)
         , _cpus = fromMaybe (d ^. #cpus) (r ^. #cpus)
         , _timeout = fromMaybe (d ^. #timeout) (r ^. #timeout)
