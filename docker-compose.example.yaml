@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  myriad:
+    build:
+      context: .
+      dockerfile: Dockerfile.release
+    image: myriad:latest
+    container_name: myriad
+    network_mode: bridge
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config.yaml:/opt/myriad/config.yaml:ro
+    ports:
+      - 127.0.0.1:8081:8081/tcp
+      - ::1:8081:8081/tcp
+    restart: unless-stopped
