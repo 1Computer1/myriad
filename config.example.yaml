@@ -13,6 +13,9 @@ port: 8081
 
 # The default language configuration.
 defaultLanguage:
+    # The OCI runtime to use when running the container.
+    runtime: runc
+
     # The maximum memory and swap usage (separately) of a container.
     memory: 256m
 

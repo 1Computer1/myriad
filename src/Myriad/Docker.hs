@@ -95,7 +95,9 @@ setupContainer lang = do
             cnt <- newContainerName lang
             logInfo ["Setting up new container ", cs cnt]
             exec_
-                [ "docker run --rm --name="
+                [ "docker run --runtime="
+                , cs $ lang ^. #runtime
+                , " --rm --name="
                 , cs cnt
                 -- User 1000 will be for setting up the environment
                 , " -u1000:1000 -w/tmp/ -dt --net=none --cpus="
