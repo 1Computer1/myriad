@@ -34,4 +34,4 @@ COPY --from=build /opt/myriad .
 
 EXPOSE 8081
 
-CMD ["./myriad"]
+ENTRYPOINT ["./myriad"]
