@@ -1,4 +1,4 @@
-FROM openjdk:13-alpine
+FROM openjdk:17-alpine
 LABEL author="1Computer1"
 
 COPY run.sh /var/run/
