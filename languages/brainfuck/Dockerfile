@@ -1,12 +1,12 @@
-FROM alpine AS build
+FROM alpine as build
 
-RUN apk update && apk add g++
 COPY bf.cpp .
-RUN g++ bf.cpp -o bf
+RUN apk add --no-cache g++ && \
+    g++ bf.cpp -o bf
 
 FROM alpine
 LABEL author="1Computer1"
 
-RUN apk update && apk add libstdc++
+RUN apk add --no-cache libstdc++
 COPY --from=build bf /usr/local/bin/
 COPY run.sh /var/run/

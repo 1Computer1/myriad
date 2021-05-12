@@ -1,7 +1,6 @@
 FROM alpine
 LABEL author="1Computer1"
 
-RUN apk update
-RUN apk add g++
+RUN apk add --no-cache g++
 
 COPY run.sh /var/run/
