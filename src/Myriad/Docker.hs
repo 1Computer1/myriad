@@ -40,13 +40,19 @@ data EvalResult
 buildImage :: Language -> Myriad ()
 buildImage lang = do
     env <- ask
-    logInfo ["Building image ", cs $ imageName lang]
-    exec_ ["docker build -t ", imageName lang, " ", cs (env ^. #languagesDir) </> cs (lang ^. #name)]
-    setupQSems
-    logInfo ["Built image ", cs $ imageName lang]
-    when (env ^. #config % #prepareContainers) . void $ setupContainer lang
+    logInfo ["Checking for image ", cs $ imageName lang]
+    res <- try $ exec ["docker images -q ", imageName lang]
+    case res of
+        Left (SomeException err) -> logError ["An exception occured when checking for image ", cs $ imageName lang, ":\n", cs $ show err]
+        Right s -> do
+            when (BL.null s) . void $ do -- If string is empty that means the image does not yet exist
+                logInfo ["Building image ", cs $ imageName lang]
+                exec_ ["docker build -t ", imageName lang, " ", cs (env ^. #languagesDir) </> cs (lang ^. #name)]
+                logInfo ["Built image ", cs $ imageName lang]
+            setupQSems
+            when (env ^. #config % #prepareContainers) . void $ setupContainer lang
     where
-        setupQSems ::  Myriad ()
+        setupQSems :: Myriad ()
         setupQSems = do
             env <- ask
             csem <- newQSem 1 -- We only want one container to be set up at a time
