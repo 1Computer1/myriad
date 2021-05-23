@@ -1,6 +1,6 @@
 FROM node:alpine
 LABEL author="1Computer1"
 
-RUN npm install --global --save-dev @swc/core @swc/register
+RUN yarn global add typescript @types/node
 
 COPY run.sh /var/run/

@@ -1,2 +1,1 @@
-cat > program.js
-node program.js
+cat | node

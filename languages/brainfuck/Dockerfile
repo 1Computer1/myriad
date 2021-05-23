@@ -1,4 +1,4 @@
-FROM alpine as build
+FROM alpine AS build
 
 COPY bf.cpp .
 RUN apk add --no-cache g++ && \
